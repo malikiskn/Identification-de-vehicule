@@ -257,3 +257,4 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 data_images/
+exports/
