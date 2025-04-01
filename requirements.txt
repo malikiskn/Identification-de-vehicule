@@ -47,3 +47,7 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 # mss  # screenshots
 # albumentations>=1.0.3
 # pycocotools>=2.0.6  # COCO mAP
+# OCR et visualisation interactive
+pytesseract
+plotly
+scikit-image
