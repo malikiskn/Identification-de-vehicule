@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Résultat</title>
+</head>
+<body>
+    <h2>✅ Résultat de la détection</h2>
+    <img src="{{ url_for('static', filename='result.jpg') }}" width="600"><br><br>
+
+    <h3>📋 Plaques détectées :</h3>
+    <ul>
+        {% for plate in plates %}
+            <li>{{ plate }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="/">↩ Retour</a>
+</body>
+</html>

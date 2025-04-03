@@ -258,3 +258,7 @@ crashlytics-build.properties
 fabric.properties
 data_images/
 exports/
+*.db
+/static/result.jpg
+/uploads/*
+__pycache__/
