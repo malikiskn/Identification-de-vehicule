@@ -261,4 +261,7 @@ exports/
 *.db
 /static/result.jpg
 /uploads/*
+/static/result_video.mp4
+/static/raw_video.avi
+/static/exports/*
 __pycache__/

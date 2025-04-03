@@ -51,3 +51,5 @@ setuptools>=70.0.0 # Snyk vulnerability fix
 pytesseract
 plotly
 scikit-image
+flask
+ffmpeg-python

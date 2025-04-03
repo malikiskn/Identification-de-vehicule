@@ -1,19 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
     <title>Résultat</title>
 </head>
 <body>
     <h2>✅ Résultat de la détection</h2>
-    <img src="{{ url_for('static', filename='result.jpg') }}" width="600"><br><br>
+
+    {% if media_type == "image" %}
+        <img src="{{ url_for('static', filename='result.jpg') }}" width="600">
+    
+    {% elif media_type == "video" %}
+    <video width="600" controls autoplay muted loop>
+        <source src="{{ url_for('static', filename='exports/' + video_name) }}" type="video/mp4">
+        Votre navigateur ne supporte pas la vidéo.
+    </video>
+    
+    {% else %}
+        <p>❌ Aucun média disponible ou format non supporté.</p>
+    {% endif %}
 
     <h3>📋 Plaques détectées :</h3>
-    <ul>
-        {% for plate in plates %}
-            <li>{{ plate }}</li>
-        {% endfor %}
-    </ul>
+    {% if plates and plates[0] %}
+        <ul>
+            {% for plate in plates %}
+                <li>{{ plate }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>😕 Aucune plaque détectée.</p>
+    {% endif %}
 
-    <a href="/">↩ Retour</a>
+    <br>
+    <a href="/">⬅️ Retour à l'accueil</a>
 </body>
 </html>

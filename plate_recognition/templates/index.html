@@ -4,10 +4,26 @@
     <title>Détection de plaque</title>
 </head>
 <body>
-    <h2>📷 Uploader une image</h2>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
+    <h2>📷 Sélectionner une option</h2>
+
+    <!-- Choisir une image -->
+    <h3>1. Upload Image</h3>
+    <form method="POST" action="/upload_image" enctype="multipart/form-data">
         <input type="file" name="file" accept="image/*" required>
-        <button type="submit">Analyser</button>
+        <button type="submit">Analyser Image</button>
     </form>
+
+    <!-- Choisir une vidéo -->
+    <h3>2. Upload Vidéo</h3>
+    <form method="POST" action="/upload_video" enctype="multipart/form-data">
+        <input type="file" name="file" accept="video/*" required>
+        <button type="submit">Analyser Vidéo</button>
+    </form>
+
+    <!-- Webcam en direct -->
+<h3>3. Webcam en direct (live)</h3>
+<form action="/webcam_live">
+    <button type="submit">Démarrer Webcam Live</button>
+</form>
 </body>
 </html>

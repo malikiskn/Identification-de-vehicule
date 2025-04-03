@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Webcam Live</title>
+</head>
+<body>
+    <h2>📡 Surveillance en direct</h2>
+
+    <!-- Vidéo en direct -->
+    <img src="{{ url_for('stream') }}" width="700">
+
+    <!-- Plaques détectées -->
+    <h3>📋 Plaques détectées en direct :</h3>
+    <div id="plates">
+        Chargement...
+    </div>
+
+    <br>
+    <a href="/">⬅️ Retour</a>
+
+    <script>
+        // Rafraîchir les plaques toutes les 2s
+        setInterval(() => {
+            fetch('/get_live_plates')
+                .then(res => res.json())
+                .then(data => {
+                    const div = document.getElementById('plates');
+                    if (data.plates.length === 0) {
+                        div.innerHTML = "<i>Aucune plaque détectée</i>";
+                    } else {
+                        div.innerHTML = "<ul>" + data.plates.map(p => `<li>${p}</li>`).join("") + "</ul>";
+                    }
+                });
+        }, 2000);
+    </script>
+</body>
+</html>
