@@ -36,10 +36,31 @@
 </head>
 <body class="bg-light" id="main-body">
 
-  <!-- 🌙 Thème -->
-  <div class="text-end px-4 py-2">
-    <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
-  </div>
+  <!-- 🌐 Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+    <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
+  
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">🏠 Accueil</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/history">📋 Historique</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/admin">⚙️ Admin</a>
+        </li>
+        <li class="nav-item">
+          <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
   <div class="container py-5 text-center">
 <!-- juste dans ton <body> après le <div class="container py-5 text-center"> -->
@@ -76,10 +97,7 @@
       <span class="carousel-control-next-icon"></span>
     </button>
   </div>
-        <!-- 🛠️ Accès admin -->
-<div class="text-center mt-5">
-    <a href="/admin" class="btn btn-outline-dark btn-sm">⚙️ Espace Admin</a>
-  </div>
+ 
 <!-- 📤 Uploads organisés -->
 <div class="container my-5">
     <div class="row justify-content-center gy-4">
@@ -88,7 +106,16 @@
       <div class="col-md-5 col-lg-4">
         <form action="/upload_image" method="post" enctype="multipart/form-data" class="p-3 border rounded shadow-sm bg-white">
           <h5 class="mb-3 text-primary">🖼️ Image</h5>
-          <input type="file" name="file" accept="image/*" class="form-control mb-2" required>
+        <input type="file" id="imageInput" name="file" accept="image/*" class="form-control mb-2" required>
+        <small id="imageFileName" class="text-muted">Aucune image sélectionnée</small>
+
+        <script>
+        document.getElementById('imageInput').addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : "Aucun fichier sélectionné";
+            document.getElementById('imageFileName').textContent = fileName;
+        });
+        </script>
+
           <button type="submit" class="btn btn-primary w-100">Analyser</button>
         </form>
       </div>
@@ -97,7 +124,15 @@
       <div class="col-md-5 col-lg-4">
         <form action="/upload_video" method="post" enctype="multipart/form-data" class="p-3 border rounded shadow-sm bg-white">
           <h5 class="mb-3 text-success">🎥 Vidéo</h5>
-          <input type="file" name="file" accept="video/*" class="form-control mb-2" required>
+            <input type="file" id="videoInput" name="file" accept="video/*" class="form-control mb-2" required>
+            <small id="videoFileName" class="text-muted">Aucune vidéo sélectionnée</small>
+
+            <script>
+            document.getElementById('videoInput').addEventListener('change', function () {
+                const fileName = this.files[0] ? this.files[0].name : "Aucune vidéo sélectionnée";
+                document.getElementById('videoFileName').textContent = fileName;
+            });
+            </script>
           <button type="submit" class="btn btn-success w-100">Analyser</button>
         </form>
       </div>
@@ -110,13 +145,7 @@
         </form>
       </div>
   
-      <!-- Historique -->
-      <div class="col-md-5 col-lg-4">
-        <form action="/history" method="get" class="p-3 border rounded shadow-sm bg-white">
-          <h5 class="mb-3 text-secondary">📋 Historique</h5>
-          <button type="submit" class="btn btn-secondary w-100">Voir</button>
-        </form>
-      </div>
+      
   
     </div>
   </div>
