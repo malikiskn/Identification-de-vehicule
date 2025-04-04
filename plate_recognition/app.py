@@ -232,5 +232,13 @@ def get_live_plates():
 def webcam_live():
     return render_template('webcam_live.html')
 
+from database import get_all_plates
+
+
+@app.route('/history')
+def history():
+    plates = get_all_plates()
+    return render_template('history.html', plates=plates)
+
 if __name__ == '__main__':
     app.run(debug=True)
