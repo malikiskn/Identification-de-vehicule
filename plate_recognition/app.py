@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 import os
 import cv2
 from yolo_pipeline import yolo_predictions
@@ -6,10 +6,9 @@ from database import save_plate
 from datetime import datetime
 from config import INPUT_WIDTH, INPUT_HEIGHT
 from database import get_connection
-from flask import flash
 app = Flask(__name__)
 
-app.secret_key = 'supersecret'  # n'importe quelle chaîne, nécessaire pour flash()
+app.secret_key = "supersecretkey"
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 STATIC_FOLDER = os.path.join(os.path.dirname(__file__), 'static')
 RESULT_IMG_PATH = os.path.join(STATIC_FOLDER, 'result.jpg')
@@ -318,22 +317,22 @@ def export_csv():
 
 @app.route('/admin')
 def admin():
-    from database import get_all_plates
-    source = request.args.get("source")
+    if not session.get('admin'):
+        return redirect(url_for('login'))
 
+    from database import get_all_plates
     rows = get_all_plates()
 
+    source = request.args.get("source")
     if source:
         rows = [row for row in rows if row[2] == source]
 
-    # Compter les sources
     count_total = len(rows)
     count_image = sum(1 for r in rows if r[2] == "image")
     count_video = sum(1 for r in rows if r[2] == "video")
     count_webcam = sum(1 for r in rows if r[2] == "webcam")
 
-    return render_template(
-        'admin.html',
+    return render_template('admin.html',
         plates=rows,
         selected_source=source,
         count_total=count_total,
@@ -363,6 +362,25 @@ def delete_all():
     conn.close()
     flash("✅ Toutes les plaques ont été supprimées.")
     return redirect(url_for('admin'))
+
+ADMIN_PASSWORD = "admin123"  # ← modifie ici ton mot de passe
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == ADMIN_PASSWORD:
+            session['admin'] = True
+            return redirect(url_for('admin'))
+        else:
+            flash("❌ Mot de passe incorrect")
+            return redirect(url_for('login'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('admin', None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)

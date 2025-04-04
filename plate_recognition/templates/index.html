@@ -1,85 +1,123 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Détection de Plaques</title>
-<!-- Bootstrap CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
+  <meta charset="UTF-8">
+  <title>Détection de Plaques</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
     body.dark-mode {
-        background-color: #121212 !important;
-        color: #f1f1f1;
+      background-color: #121212 !important;
+      color: #f1f1f1;
     }
 
-    .dark-mode .btn-primary,
-    .dark-mode .btn-success,
-    .dark-mode .btn-danger,
-    .dark-mode .btn-secondary {
-        filter: brightness(0.9);
-    }
-
+    .dark-mode .btn,
     .dark-mode input,
     .dark-mode select,
     .dark-mode textarea {
-        background-color: #1e1e1e;
-        color: #fff;
+      background-color: #1e1e1e;
+      color: #fff;
+      border-color: #444;
     }
 
-    .dark-mode .form-control {
-        border-color: #444;
+    footer {
+      position: relative;
+      bottom: 0;
+      width: 100%;
     }
-</style>
+
+    .intro-img {
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+  </style>
 </head>
 <body class="bg-light" id="main-body">
-    <div class="text-end px-4 py-2">
-        <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
+
+  <!-- 🌙 Thème -->
+  <div class="text-end px-4 py-2">
+    <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
+  </div>
+
+  <div class="container py-5 text-center">
+    <h1 class="mb-4 text-primary">🚘 Bienvenue sur notre plateforme ANPR</h1>
+    <p class="lead mb-5">
+      Cette application utilise <strong>l’IA</strong> et <strong>YOLOv5</strong> pour détecter automatiquement les plaques d’immatriculation
+      sur des images, vidéos ou via une webcam en temps réel.
+    </p>
+
+    <!-- 🖼️ Image de démonstration -->
+    <div class="mb-5">
+      <img src="https://cdn.pixabay.com/photo/2016/11/18/14/07/car-1835506_1280.jpg" alt="Voiture" class="img-fluid intro-img">
     </div>
-<div class="container py-5">
-    <h1 class="mb-4 text-center text-primary">📷 Détection de plaques d'immatriculation</h1>
 
-    <form action="/upload_image" method="post" enctype="multipart/form-data" class="mb-4">
-        <h4>🖼️ 1. Télécharger une image</h4>
-        <input type="file" name="file" class="form-control mb-2" required>
-        <button type="submit" class="btn btn-primary">Analyser l'image</button>
-    </form>
+    <!-- 📤 Uploads -->
+    <div class="row justify-content-center text-start g-4">
+        <!-- 🛠️ Accès admin -->
+<div class="text-center mt-5">
+    <a href="/admin" class="btn btn-outline-dark btn-sm">⚙️ Espace Admin</a>
+  </div>
+      <div class="col-md-6">
+        <form action="/upload_image" method="post" enctype="multipart/form-data" class="p-4 border rounded shadow-sm">
+          <h4>🖼️ 1. Télécharger une image</h4>
+          <input type="file" name="file" accept="image/*" class="form-control mb-2" required>
+          <button type="submit" class="btn btn-primary w-100">Analyser l'image</button>
+        </form>
+      </div>
 
-    <form action="/upload_video" method="post" enctype="multipart/form-data" class="mb-4">
-        <h4>🎥 2. Télécharger une vidéo</h4>
-        <input type="file" name="file" class="form-control mb-2" required>
-        <button type="submit" class="btn btn-success">Analyser la vidéo</button>
-    </form>
+      <div class="col-md-6">
+        <form action="/upload_video" method="post" enctype="multipart/form-data" class="p-4 border rounded shadow-sm">
+          <h4>🎥 2. Télécharger une vidéo</h4>
+          <input type="file" name="file" accept="video/*" class="form-control mb-2" required>
+          <button type="submit" class="btn btn-success w-100">Analyser la vidéo</button>
+        </form>
+      </div>
 
-    <form action="/webcam_live" method="get" class="mb-4">
-        <h4>📡 3. Activer la webcam en direct</h4>
-        <button type="submit" class="btn btn-danger">Lancer la webcam</button>
-    </form>
+      <div class="col-md-6">
+        <form action="/webcam_live" method="get" class="p-4 border rounded shadow-sm">
+          <h4>📡 3. Utiliser la webcam en direct</h4>
+          <button type="submit" class="btn btn-danger w-100">Lancer la webcam</button>
+        </form>
+      </div>
 
-    <form action="/history" method="get">
-        <h4>📋 Historique</h4>
-        <button type="submit" class="btn btn-secondary">Voir l'historique</button>
-    </form>
-</div>
-<script>
+      <div class="col-md-6">
+        <form action="/history" method="get" class="p-4 border rounded shadow-sm">
+          <h4>📋 4. Accéder à l’historique</h4>
+          <button type="submit" class="btn btn-secondary w-100">Voir les plaques détectées</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 📌 Footer -->
+  <footer class="bg-dark text-white text-center py-3 mt-5">
+    Projet ANPR © 2025 – Réalisé par Malick SOKHONA & Alexendre 🚀
+  </footer>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
     const toggleBtn = document.getElementById("toggle-theme");
     const body = document.getElementById("main-body");
 
-    // Charger la préférence enregistrée
     if (localStorage.getItem("theme") === "dark") {
-        body.classList.add("dark-mode");
-        toggleBtn.textContent = "🌞 Activer le mode clair";
+      body.classList.add("dark-mode");
+      toggleBtn.textContent = "🌞 Activer le mode clair";
     }
 
     toggleBtn.addEventListener("click", () => {
-        body.classList.toggle("dark-mode");
-
-        if (body.classList.contains("dark-mode")) {
-            localStorage.setItem("theme", "dark");
-            toggleBtn.textContent = "🌞 Activer le mode clair";
-        } else {
-            localStorage.setItem("theme", "light");
-            toggleBtn.textContent = "🌙 Activer le mode sombre";
-        }
+      body.classList.toggle("dark-mode");
+      if (body.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        toggleBtn.textContent = "🌞 Activer le mode clair";
+      } else {
+        localStorage.setItem("theme", "light");
+        toggleBtn.textContent = "🌙 Activer le mode sombre";
+      }
     });
-</script>
+  </script>
+
 </body>
 </html>
