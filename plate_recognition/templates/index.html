@@ -1,33 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Détection de plaque</title>
+    <meta charset="UTF-8">
+    <title>Détection de Plaques</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h2>📷 Sélectionner une option</h2>
+<body class="bg-light">
 
-    <!-- Choisir une image -->
-    <h3>1. Upload Image</h3>
-    <form method="POST" action="/upload_image" enctype="multipart/form-data">
-        <input type="file" name="file" accept="image/*" required>
-        <button type="submit">Analyser Image</button>
+<div class="container py-5">
+    <h1 class="mb-4 text-center text-primary">📷 Détection de plaques d'immatriculation</h1>
+
+    <form action="/upload_image" method="post" enctype="multipart/form-data" class="mb-4">
+        <h4>🖼️ 1. Télécharger une image</h4>
+        <input type="file" name="file" class="form-control mb-2" required>
+        <button type="submit" class="btn btn-primary">Analyser l'image</button>
     </form>
 
-    <!-- Choisir une vidéo -->
-    <h3>2. Upload Vidéo</h3>
-    <form method="POST" action="/upload_video" enctype="multipart/form-data">
-        <input type="file" name="file" accept="video/*" required>
-        <button type="submit">Analyser Vidéo</button>
+    <form action="/upload_video" method="post" enctype="multipart/form-data" class="mb-4">
+        <h4>🎥 2. Télécharger une vidéo</h4>
+        <input type="file" name="file" class="form-control mb-2" required>
+        <button type="submit" class="btn btn-success">Analyser la vidéo</button>
     </form>
 
-    <!-- Webcam en direct -->
-<h3>3. Webcam en direct (live)</h3>
-<form action="/webcam_live">
-    <button type="submit">Démarrer Webcam Live</button>
-</form>
-<h3>📋 Voir l'historique</h3>
-<form action="/history">
-    <button type="submit">Afficher l'historique</button>
-</form>
+    <form action="/webcam_live" method="get" class="mb-4">
+        <h4>📡 3. Activer la webcam en direct</h4>
+        <button type="submit" class="btn btn-danger">Lancer la webcam</button>
+    </form>
+
+    <form action="/history" method="get">
+        <h4>📋 Historique</h4>
+        <button type="submit" class="btn btn-secondary">Voir l'historique</button>
+    </form>
+</div>
+
 </body>
 </html>

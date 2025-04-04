@@ -3,36 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>Webcam Live</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h2>📡 Surveillance en direct</h2>
+<body class="bg-light">
 
-    <!-- Vidéo en direct -->
-    <img src="{{ url_for('stream') }}" width="700">
+<div class="container py-5 text-center">
+    <h2 class="text-danger mb-4">📡 Webcam en direct</h2>
 
-    <!-- Plaques détectées -->
-    <h3>📋 Plaques détectées en direct :</h3>
-    <div id="plates">
+    <!-- Flux MJPEG en direct -->
+    <img src="{{ url_for('stream') }}" width="700" class="rounded shadow mb-4">
+
+    <h4>📋 Plaques détectées :</h4>
+    <div id="plates" class="mb-3">
         Chargement...
     </div>
 
-    <br>
-    <a href="/">⬅️ Retour</a>
+    <a href="/" class="btn btn-primary">⬅️ Retour</a>
+</div>
 
-    <script>
-        // Rafraîchir les plaques toutes les 2s
-        setInterval(() => {
-            fetch('/get_live_plates')
-                .then(res => res.json())
-                .then(data => {
-                    const div = document.getElementById('plates');
-                    if (data.plates.length === 0) {
-                        div.innerHTML = "<i>Aucune plaque détectée</i>";
-                    } else {
-                        div.innerHTML = "<ul>" + data.plates.map(p => `<li>${p}</li>`).join("") + "</ul>";
-                    }
-                });
-        }, 2000);
-    </script>
+<script>
+    // Rafraîchir les plaques toutes les 2s
+    setInterval(() => {
+        fetch('/get_live_plates')
+            .then(res => res.json())
+            .then(data => {
+                const div = document.getElementById('plates');
+                if (data.plates.length === 0) {
+                    div.innerHTML = "<i class='text-muted'>Aucune plaque détectée</i>";
+                } else {
+                    div.innerHTML = "<ul class='list-group mx-auto' style='max-width: 400px;'>" +
+                        data.plates.map(p => `<li class='list-group-item'>${p}</li>`).join("") +
+                        "</ul>";
+                }
+            });
+    }, 2000);
+</script>
+
 </body>
 </html>

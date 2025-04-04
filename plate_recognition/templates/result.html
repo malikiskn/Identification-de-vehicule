@@ -3,35 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <title>Résultat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h2>✅ Résultat de la détection</h2>
+<body class="bg-light">
+
+<div class="container py-5 text-center">
+    <h2 class="text-success mb-4">✅ Résultat de la détection</h2>
 
     {% if media_type == "image" %}
-        <img src="{{ url_for('static', filename='result.jpg') }}" width="600">
+        <img src="{{ url_for('static', filename='result.jpg') }}" class="img-fluid rounded shadow">
     
     {% elif media_type == "video" %}
-    <video width="600" controls autoplay muted loop>
-        <source src="{{ url_for('static', filename='exports/' + video_name) }}" type="video/mp4">
-        Votre navigateur ne supporte pas la vidéo.
-    </video>
+        <video class="rounded shadow" width="700" controls autoplay muted loop>
+            <source src="{{ url_for('static', filename='exports/' + video_name) }}" type="video/mp4">
+            Votre navigateur ne supporte pas la vidéo.
+        </video>
     
     {% else %}
-        <p>❌ Aucun média disponible ou format non supporté.</p>
+        <div class="alert alert-warning mt-3">
+            ❌ Aucun média disponible ou format non supporté.
+        </div>
     {% endif %}
 
-    <h3>📋 Plaques détectées :</h3>
+    <h3 class="mt-5">📋 Plaques détectées :</h3>
     {% if plates and plates[0] %}
-        <ul>
+        <ul class="list-group mx-auto" style="max-width: 400px;">
             {% for plate in plates %}
-                <li>{{ plate }}</li>
+                <li class="list-group-item">{{ plate }}</li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>😕 Aucune plaque détectée.</p>
+        <p class="text-muted">😕 Aucune plaque détectée.</p>
     {% endif %}
 
-    <br>
-    <a href="/">⬅️ Retour à l'accueil</a>
+    <div class="mt-4">
+        <a href="/" class="btn btn-primary">⬅️ Retour à l'accueil</a>
+    </div>
+</div>
+
 </body>
 </html>
