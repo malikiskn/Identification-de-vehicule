@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter une plaque</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light" id="main-body">
+
+  <div class="container py-5">
+    <h2 class="mb-4 text-primary">➕ Ajouter une plaque manuellement</h2>
+
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Numéro de plaque</label>
+        <input type="text" name="plate" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Source</label>
+        <select name="source" class="form-select">
+          <option value="image">Image</option>
+          <option value="video">Vidéo</option>
+          <option value="webcam">Webcam</option>
+          <option value="manuelle">Manuelle</option>
+        </select>
+      </div>
+
+      <div class="mt-4">
+        <a href="/admin" class="btn btn-secondary me-2">⬅️ Annuler</a>
+        <button type="submit" class="btn btn-success">💾 Ajouter</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -39,3 +39,10 @@ def get_all_plates(db_name='detections.db'):
     rows = cursor.fetchall()
     conn.close()
     return rows
+#modification de la plaque
+def update_plate(plate_id, new_plate):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE plates SET plate = ? WHERE id = ?", (new_plate, plate_id))
+    conn.commit()
+    conn.close()

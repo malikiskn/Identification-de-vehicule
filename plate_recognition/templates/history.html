@@ -1,126 +1,118 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Historique</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body.dark-mode {
-            background-color: #121212 !important;
-            color: #f1f1f1;
-        }
-    
-        .dark-mode .table {
-            color: #f1f1f1;
-            background-color: #1e1e1e;
-        }
-    
-        .dark-mode .table th,
-        .dark-mode .table td {
-            border-color: #444;
-        }
-    
-        .dark-mode .btn {
-            filter: brightness(0.9);
-        }
-    </style>
-</head>
+  <meta charset="UTF-8">
+  <title>Historique des plaques</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<body class="bg-light" id="main-body">
-     <!-- 🌐 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-    <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
-  
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-  
-    <div class="collapse navbar-collapse" id="mainNavbar">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/">🏠 Accueil</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/history">📋 Historique</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/admin">⚙️ Admin</a>
-        </li>
-        <li class="nav-item">
-          <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
-        </li>
-      </ul>
-    </div>
-  </nav>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="/" class="btn btn-secondary">⬅️ Retour à l'accueil</a>
-    
-        <div>
-            <a href="/export-pdf" class="btn btn-outline-success me-2">📄 Export PDF</a>
-            <a href="/export-csv" class="btn btn-outline-primary">📥 Export CSV</a>
-        </div>
-    </div>
-    <div class="text-end px-4 py-2">
-        <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
-    </div>
-<div class="container py-5">
-    <h2 class="mb-4 text-center text-success">📋 Historique des plaques détectées</h2>
-
-    {% if plates %}
-        <table class="table table-striped table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Plaque</th>
-                    <th>Source</th>
-                    <th>Date/Heure</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in plates %}
-                <tr>
-                    <td>{{ row[0] }}</td>
-                    <td>{{ row[1] }}</td>
-                    <td>{{ row[2] }}</td>
-                    <td>{{ row[3] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p class="alert alert-warning text-center">Aucune donnée enregistrée pour le moment.</p>
-    {% endif %}
-
-    <div class="text-center mt-4">
-        <a href="/" class="btn btn-primary">⬅️ Retour à l'accueil</a>
-    </div>
-    <div class="mb-3 text-end">
-        <a href="/export-pdf" class="btn btn-outline-dark">📄 Exporter en PDF</a>
-        <a href="/export-csv" class="btn btn-outline-primary ms-2">📥 Exporter en CSV</a>
-    </div>
-</div>
-
-<script>
-    const toggleBtn = document.getElementById("toggle-theme");
-    const body = document.getElementById("main-body");
-
-    // Appliquer le thème si déjà choisi
-    if (localStorage.getItem("theme") === "dark") {
-        body.classList.add("dark-mode");
-        toggleBtn.textContent = "🌞 Activer le mode clair";
+  <style>
+    body.dark-mode {
+      background-color: #121212 !important;
+      color: #f1f1f1;
     }
 
-    toggleBtn.addEventListener("click", () => {
-        body.classList.toggle("dark-mode");
+    .dark-mode .btn,
+    .dark-mode input,
+    .dark-mode select,
+    .dark-mode textarea,
+    .dark-mode .form-control,
+    .dark-mode table {
+      background-color: #1e1e1e;
+      color: #fff;
+      border-color: #555;
+    }
 
-        if (body.classList.contains("dark-mode")) {
-            localStorage.setItem("theme", "dark");
-            toggleBtn.textContent = "🌞 Activer le mode clair";
-        } else {
-            localStorage.setItem("theme", "light");
-            toggleBtn.textContent = "🌙 Activer le mode sombre";
-        }
-    });
+    .dark-mode .table-bordered {
+      border-color: #555;
+    }
+
+    .dark-mode .table-dark th {
+      background-color: #222 !important;
+    }
+  </style>
+</head>
+<body class="bg-light" id="main-body">
+
+<!-- 🔹 Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+  <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
+  <div class="collapse navbar-collapse">
+    <ul class="navbar-nav ms-auto">
+      <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
+      <li class="nav-item"><a class="nav-link" href="/admin">⚙️ Admin</a></li>
+      <li class="nav-item">
+        <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container py-5">
+  <h2 class="mb-4 text-primary">📋 Historique des plaques détectées</h2>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
+    <div>
+      <a href="/export-pdf" class="btn btn-outline-danger me-2">📄 Exporter en PDF</a>
+      <a href="/export-csv" class="btn btn-outline-primary">🧾 Exporter en CSV</a>
+    </div>
+  </div>
+  {% if plates %}
+    <table class="table table-bordered table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Plaque</th>
+          <th>Source</th>
+          <th>Date</th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for plate in plates %}
+        <tr>
+          <td>{{ plate[0] }}</td>
+          <td>{{ plate[1] }}</td>
+          <td>{{ plate[2] }}</td>
+          <td>{{ plate[3] }}</td>
+          
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="alert alert-info">Aucune plaque détectée.</p>
+  {% endif %}
+
+  <a href="/" class="btn btn-secondary mt-4">⬅️ Retour à l'accueil</a>
+</div>
+
+<footer class="bg-dark text-white text-center py-3 mt-5">
+  Projet ANPR © 2025 – Malick SOKHONA & Alexandre 🚀
+</footer>
+
+<!-- JS Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🌙 Dark Mode JS -->
+<script>
+  const toggleBtn = document.getElementById("toggle-theme");
+  const body = document.getElementById("main-body");
+
+  if (localStorage.getItem("theme") === "dark") {
+    body.classList.add("dark-mode");
+    toggleBtn.textContent = "🌞 Activer le mode clair";
+  }
+
+  toggleBtn.addEventListener("click", () => {
+    body.classList.toggle("dark-mode");
+    if (body.classList.contains("dark-mode")) {
+      localStorage.setItem("theme", "dark");
+      toggleBtn.textContent = "🌞 Activer le mode clair";
+    } else {
+      localStorage.setItem("theme", "light");
+      toggleBtn.textContent = "🌙 Activer le mode sombre";
+    }
+  });
 </script>
 </body>
 </html>

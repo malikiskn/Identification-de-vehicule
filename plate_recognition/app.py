@@ -382,5 +382,54 @@ def logout():
     session.pop('admin', None)
     return redirect(url_for('index'))
 
+
+# 📝 Affiche le formulaire de modification
+@app.route('/edit/<int:id>')
+def edit_plate(id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM plates WHERE id = ?", (id,))
+    plate = cur.fetchone()
+    conn.close()
+
+    return render_template("edit_plate.html", plate=plate)
+
+# 💾 Enregistre la plaque modifiée
+@app.route('/update/<int:id>', methods=['POST'])
+def update_plate_route(id):
+    from_page = request.args.get("from_page", "history")
+    new_plate = request.form.get("new_plate", "").strip()
+
+    if not new_plate:
+        flash("🚫 Le champ de la plaque est vide.", "danger")
+        return redirect(url_for(from_page))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE plates SET plate = ? WHERE id = ?", (new_plate, id))
+    conn.commit()
+    conn.close()
+
+    flash(f"✅ Plaque modifiée : {new_plate}", "success")
+    return redirect(url_for(from_page))
+
+@app.route('/add_plate', methods=['GET', 'POST'])
+def add_plate():
+    if request.method == 'POST':
+        plate = request.form['plate']
+        source = request.form['source']
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO plates (plate, source, timestamp) VALUES (?, ?, ?)", (plate, source, timestamp))
+        conn.commit()
+        conn.close()
+
+        flash("✅ Nouvelle plaque ajoutée avec succès.")
+        return redirect(url_for('admin'))
+
+    return render_template('add_plate.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
