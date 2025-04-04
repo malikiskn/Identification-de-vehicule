@@ -5,9 +5,11 @@ from yolo_pipeline import yolo_predictions
 from database import save_plate
 from datetime import datetime
 from config import INPUT_WIDTH, INPUT_HEIGHT
-
+from database import get_connection
+from flask import flash
 app = Flask(__name__)
 
+app.secret_key = 'supersecret'  # n'importe quelle chaîne, nécessaire pour flash()
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 STATIC_FOLDER = os.path.join(os.path.dirname(__file__), 'static')
 RESULT_IMG_PATH = os.path.join(STATIC_FOLDER, 'result.jpg')
@@ -210,8 +212,11 @@ def generate_frames():
         # YOLO + annotation
         result_img, texts = yolo_predictions(frame, net)
 
-        # Mémoriser les plaques détectées
-        live_plates = list(set([p for p in texts if p and p != 'no number']))
+        for plate in texts:
+            if plate and plate != 'no number':
+                if plate not in live_plates:
+                    live_plates.append(plate)
+                    save_plate(plate, source='webcam')
 
         # Encoder en JPEG
         ret, buffer = cv2.imencode('.jpg', result_img)
@@ -220,6 +225,8 @@ def generate_frames():
         # Yield frame pour MJPEG
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    cap.release()
         
 from flask import jsonify
 
@@ -239,6 +246,123 @@ from database import get_all_plates
 def history():
     plates = get_all_plates()
     return render_template('history.html', plates=plates)
+
+from flask import send_file
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import io
+
+@app.route('/export-pdf')
+def export_pdf():
+    from database import get_all_plates
+    rows = get_all_plates()
+
+    # Création PDF en mémoire
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    # Titre
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 50, "📋 Historique des plaques détectées")
+
+    # En-têtes de colonne
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, height - 80, "ID")
+    p.drawString(100, height - 80, "Plaque")
+    p.drawString(250, height - 80, "Source")
+    p.drawString(400, height - 80, "Date")
+
+    # Contenu
+    p.setFont("Helvetica", 10)
+    y = height - 100
+    for row in rows:
+        p.drawString(50, y, str(row[0]))
+        p.drawString(100, y, row[1])
+        p.drawString(250, y, row[2])
+        p.drawString(400, y, row[3])
+        y -= 20
+        if y < 50:
+            p.showPage()
+            y = height - 50
+
+    p.save()
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True, download_name="historique_plaques.pdf", mimetype='application/pdf')
+
+
+import csv
+
+@app.route('/export-csv')
+def export_csv():
+    from database import get_all_plates
+    rows = get_all_plates()
+
+    # Créer le contenu CSV en mémoire
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID', 'Plaque', 'Source', 'Date'])
+
+    for row in rows:
+        writer.writerow(row)
+
+    output.seek(0)
+
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment;filename=plaques_detectees.csv'}
+    )
+
+
+@app.route('/admin')
+def admin():
+    from database import get_all_plates
+    source = request.args.get("source")
+
+    rows = get_all_plates()
+
+    if source:
+        rows = [row for row in rows if row[2] == source]
+
+    # Compter les sources
+    count_total = len(rows)
+    count_image = sum(1 for r in rows if r[2] == "image")
+    count_video = sum(1 for r in rows if r[2] == "video")
+    count_webcam = sum(1 for r in rows if r[2] == "webcam")
+
+    return render_template(
+        'admin.html',
+        plates=rows,
+        selected_source=source,
+        count_total=count_total,
+        count_image=count_image,
+        count_video=count_video,
+        count_webcam=count_webcam
+    )
+
+@app.route('/delete/<int:id>', methods=['POST'])
+def delete_plate(id):
+    
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM plates WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    flash("✅ Plaque supprimée avec succès.")
+    return redirect(url_for('admin'))
+
+
+@app.route('/delete_all', methods=['POST'])
+def delete_all():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM plates")
+    conn.commit()
+    conn.close()
+    flash("✅ Toutes les plaques ont été supprimées.")
+    return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     app.run(debug=True)

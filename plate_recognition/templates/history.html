@@ -4,9 +4,40 @@
     <meta charset="UTF-8">
     <title>Historique</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body.dark-mode {
+            background-color: #121212 !important;
+            color: #f1f1f1;
+        }
+    
+        .dark-mode .table {
+            color: #f1f1f1;
+            background-color: #1e1e1e;
+        }
+    
+        .dark-mode .table th,
+        .dark-mode .table td {
+            border-color: #444;
+        }
+    
+        .dark-mode .btn {
+            filter: brightness(0.9);
+        }
+    </style>
 </head>
-<body class="bg-light">
 
+<body class="bg-light" id="main-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-secondary">⬅️ Retour à l'accueil</a>
+    
+        <div>
+            <a href="/export-pdf" class="btn btn-outline-success me-2">📄 Export PDF</a>
+            <a href="/export-csv" class="btn btn-outline-primary">📥 Export CSV</a>
+        </div>
+    </div>
+    <div class="text-end px-4 py-2">
+        <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
+    </div>
 <div class="container py-5">
     <h2 class="mb-4 text-center text-success">📋 Historique des plaques détectées</h2>
 
@@ -38,7 +69,33 @@
     <div class="text-center mt-4">
         <a href="/" class="btn btn-primary">⬅️ Retour à l'accueil</a>
     </div>
+    <div class="mb-3 text-end">
+        <a href="/export-pdf" class="btn btn-outline-dark">📄 Exporter en PDF</a>
+        <a href="/export-csv" class="btn btn-outline-primary ms-2">📥 Exporter en CSV</a>
+    </div>
 </div>
 
+<script>
+    const toggleBtn = document.getElementById("toggle-theme");
+    const body = document.getElementById("main-body");
+
+    // Appliquer le thème si déjà choisi
+    if (localStorage.getItem("theme") === "dark") {
+        body.classList.add("dark-mode");
+        toggleBtn.textContent = "🌞 Activer le mode clair";
+    }
+
+    toggleBtn.addEventListener("click", () => {
+        body.classList.toggle("dark-mode");
+
+        if (body.classList.contains("dark-mode")) {
+            localStorage.setItem("theme", "dark");
+            toggleBtn.textContent = "🌞 Activer le mode clair";
+        } else {
+            localStorage.setItem("theme", "light");
+            toggleBtn.textContent = "🌙 Activer le mode sombre";
+        }
+    });
+</script>
 </body>
 </html>

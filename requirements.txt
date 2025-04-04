@@ -53,3 +53,4 @@ plotly
 scikit-image
 flask
 ffmpeg-python
+reportlab
