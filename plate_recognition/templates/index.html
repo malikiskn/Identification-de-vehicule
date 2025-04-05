@@ -64,8 +64,11 @@
 
   <div class="container py-5 text-center">
 <!-- juste dans ton <body> après le <div class="container py-5 text-center"> -->
+    <div class="d-flex align-items-center justify-content-center mb-4">
+        <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo université" width="90" class="me-4" style="max-height: 120px;">
+        <h1 class="text-primary mb-0">🚘 Bienvenue sur notre plateforme ANPR</h1>
+      </div>
 
-    <h1 class="mb-4 text-primary">🚘 Bienvenue sur notre plateforme ANPR</h1>
     <p class="lead mb-5">
       Cette application utilise <strong>l’IA</strong> et <strong>YOLOv5</strong> pour détecter automatiquement les plaques d’immatriculation
       sur des images, vidéos ou via une webcam en temps réel.

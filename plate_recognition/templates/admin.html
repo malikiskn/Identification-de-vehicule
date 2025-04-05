@@ -41,7 +41,11 @@
 
 <!-- 🌐 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-    <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+        <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
+        🚘 ANPR
+      </a>
+      
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -56,14 +60,11 @@
       <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
       <a href="/logout" class="btn btn-sm btn-outline-light ms-3">🔓 Se déconnecter</a>
     </div>
+    
   </nav>
 
 <div class="container py-5">
   <h2 class="text-danger mb-4">⚙️ Admin - Gestion des plaques</h2>
-
-  <div class="text-end mb-3">
-    <a href="/" class="btn btn-secondary">⬅️ Retour</a>
-  </div>
 
   <div class="mb-3 text-end">
     <a href="{{ url_for('add_plate') }}" class="btn btn-outline-primary">➕ Ajouter une plaque</a>

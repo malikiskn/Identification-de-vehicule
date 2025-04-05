@@ -35,7 +35,11 @@
 
 <!-- 🔹 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-  <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+        <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
+        🚘 ANPR
+      </a>
+
   <div class="collapse navbar-collapse">
     <ul class="navbar-nav ms-auto">
       <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
