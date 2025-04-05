@@ -6,6 +6,12 @@ from database import save_plate
 from datetime import datetime
 from config import INPUT_WIDTH, INPUT_HEIGHT
 from database import get_connection
+import io
+from flask import send_file
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+import csv
+from flask import Response
 app = Flask(__name__)
 
 app.secret_key = "supersecretkey"
@@ -241,16 +247,24 @@ def webcam_live():
 from database import get_all_plates
 
 
+from collections import Counter
+from database import get_all_plates
+
 @app.route('/history')
 def history():
     plates = get_all_plates()
-    return render_template('history.html', plates=plates)
 
-from flask import send_file
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-import io
+    # Statistiques
+    sources = [row[2] for row in plates]
+    dates = [row[3][:10] for row in plates]
 
+    source_counts = dict(Counter(sources))
+    date_counts = dict(Counter(dates))
+
+    return render_template('history.html', plates=plates,
+                           source_counts=source_counts,
+                           date_counts=date_counts)
+    
 @app.route('/export-pdf')
 def export_pdf():
     from database import get_all_plates

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Historique des plaques</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body.dark-mode {
@@ -35,10 +36,10 @@
 
 <!-- 🔹 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-    <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-        <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
-        🚘 ANPR
-      </a>
+  <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+    <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
+    🚘 ANPR
+  </a>
 
   <div class="collapse navbar-collapse">
     <ul class="navbar-nav ms-auto">
@@ -51,42 +52,49 @@
   </div>
 </nav>
 
-<div class="container py-5">
-  <h2 class="mb-4 text-primary">📋 Historique des plaques détectées</h2>
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div></div>
-    <div>
-      <a href="/export-pdf" class="btn btn-outline-danger me-2">📄 Exporter en PDF</a>
-      <a href="/export-csv" class="btn btn-outline-primary">🧾 Exporter en CSV</a>
+<div class="container py-4">
+  <!-- 📈 Statistiques -->
+  <div class="row mb-5">
+    <div class="col-md-6 d-flex flex-column align-items-center">
+      <h6>📊 Répartition des sources</h6>
+      <canvas id="sourceChart" style="max-width: 300px; max-height: 300px;"></canvas>
+    </div>
+    <div class="col-md-6 d-flex flex-column align-items-center">
+      <h6>📅 Plaques par date</h6>
+      <canvas id="dateChart" style="max-width: 350px; max-height: 300px;"></canvas>
     </div>
   </div>
-  <!-- 🔎 Barre de recherche -->
-<div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="🔍 Rechercher une plaque, source ou date...">
+
+  <!-- 📤 Export + 🔍 Recherche -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <input type="text" id="searchInput" class="form-control w-50" placeholder="🔍 Rechercher une plaque, source ou date...">
+    <div>
+      <a href="/export-pdf" class="btn btn-outline-danger me-2">📄 PDF</a>
+      <a href="/export-csv" class="btn btn-outline-primary">🧾 CSV</a>
+    </div>
   </div>
+
   {% if plates %}
-    <table class="table table-bordered table-hover">
-      <thead class="table-dark">
-        <tr>
-          <th>ID</th>
-          <th>Plaque</th>
-          <th>Source</th>
-          <th>Date</th>
-          
-        </tr>
-      </thead>
-      <tbody>
-        {% for plate in plates %}
-        <tr>
-          <td>{{ plate[0] }}</td>
-          <td>{{ plate[1] }}</td>
-          <td>{{ plate[2] }}</td>
-          <td>{{ plate[3] }}</td>
-          
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <table class="table table-bordered table-hover text-center align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>ID</th>
+        <th>Plaque</th>
+        <th>Source</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for plate in plates %}
+      <tr>
+        <td>{{ plate[0] }}</td>
+        <td>{{ plate[1] }}</td>
+        <td>{{ plate[2] }}</td>
+        <td>{{ plate[3] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
   {% else %}
     <p class="alert alert-info">Aucune plaque détectée.</p>
   {% endif %}
@@ -94,44 +102,71 @@
   <a href="/" class="btn btn-secondary mt-4">⬅️ Retour à l'accueil</a>
 </div>
 
+<!-- 🔻 Footer -->
 <footer class="bg-dark text-white text-center py-3 mt-5">
   Projet ANPR © 2025 – Malick SOKHONA & Alexandre 🚀
 </footer>
 
-<!-- JS Bootstrap -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- 🌙 Dark Mode JS -->
+<!-- 🌓 Thème -->
 <script>
   const toggleBtn = document.getElementById("toggle-theme");
   const body = document.getElementById("main-body");
 
   if (localStorage.getItem("theme") === "dark") {
     body.classList.add("dark-mode");
-    toggleBtn.textContent = "🌞 Activer le mode clair";
+    toggleBtn.textContent = "🌞 Thème clair";
   }
 
   toggleBtn.addEventListener("click", () => {
     body.classList.toggle("dark-mode");
-    if (body.classList.contains("dark-mode")) {
-      localStorage.setItem("theme", "dark");
-      toggleBtn.textContent = "🌞 Activer le mode clair";
-    } else {
-      localStorage.setItem("theme", "light");
-      toggleBtn.textContent = "🌙 Activer le mode sombre";
+    const mode = body.classList.contains("dark-mode") ? "dark" : "light";
+    toggleBtn.textContent = mode === "dark" ? "🌞 Thème clair" : "🌙 Thème sombre";
+    localStorage.setItem("theme", mode);
+  });
+</script>
+
+<!-- 🔍 Recherche temps réel -->
+<script>
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const value = this.value.toLowerCase();
+    const rows = document.querySelectorAll("table tbody tr");
+    rows.forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(value) ? "" : "none";
+    });
+  });
+</script>
+
+<!-- 📊 Graphiques -->
+<script>
+  const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+  new Chart(sourceCtx, {
+    type: 'pie',
+    data: {
+      labels: {{ source_counts.keys()|list|tojson }},
+      datasets: [{
+        data: {{ source_counts.values()|list|tojson }},
+        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#17a2b8']
+      }]
+    }
+  });
+
+  const dateCtx = document.getElementById('dateChart').getContext('2d');
+  new Chart(dateCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ date_counts.keys()|list|tojson }},
+      datasets: [{
+        label: 'Plaques détectées',
+        data: {{ date_counts.values()|list|tojson }},
+        backgroundColor: '#17a2b8'
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
     }
   });
 </script>
-<script>
-    document.getElementById("searchInput").addEventListener("input", function () {
-      const value = this.value.toLowerCase();
-      const rows = document.querySelectorAll("table tbody tr");
-  
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(value) ? "" : "none";
-      });
-    });
-  </script>
 </body>
 </html>
