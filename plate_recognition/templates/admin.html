@@ -100,7 +100,10 @@
     <div class="col"><div class="alert alert-info">🎞️ Vidéo : <strong>{{ count_video }}</strong></div></div>
     <div class="col"><div class="alert alert-warning">📷 Webcam : <strong>{{ count_webcam }}</strong></div></div>
   </div>
-
+<!-- 🔎 Barre de recherche -->
+<div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="🔍 Rechercher une plaque, source ou date...">
+  </div>
   {% if plates %}
   <table class="table table-bordered table-hover text-center align-middle">
     <thead class="table-dark">
@@ -200,6 +203,16 @@
     localStorage.setItem("theme", mode);
   });
 </script>
-
+<script>
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const value = this.value.toLowerCase();
+      const rows = document.querySelectorAll("table tbody tr");
+  
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(value) ? "" : "none";
+      });
+    });
+  </script>
 </body>
 </html>
