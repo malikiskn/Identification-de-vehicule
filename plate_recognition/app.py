@@ -363,7 +363,7 @@ def delete_all():
     flash("✅ Toutes les plaques ont été supprimées.")
     return redirect(url_for('admin'))
 
-ADMIN_PASSWORD = "admin123"  # ← modifie ici ton mot de passe
+ADMIN_PASSWORD = "admin"  
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
