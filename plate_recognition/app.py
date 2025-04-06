@@ -252,18 +252,38 @@ from database import get_all_plates
 
 @app.route('/history')
 def history():
-    plates = get_all_plates()
+    from database import get_connection
 
-    # Statistiques
-    sources = [row[2] for row in plates]
-    dates = [row[3][:10] for row in plates]
+    source = request.args.get('source')
+    conn = get_connection()
+    cur = conn.cursor()
 
-    source_counts = dict(Counter(sources))
-    date_counts = dict(Counter(dates))
+    if source:
+        cur.execute("SELECT * FROM plates WHERE source = ? ORDER BY timestamp DESC", (source,))
+    else:
+        cur.execute("SELECT * FROM plates ORDER BY timestamp DESC")
 
-    return render_template('history.html', plates=plates,
-                           source_counts=source_counts,
-                           date_counts=date_counts)
+    plates = cur.fetchall()
+    conn.close()
+
+    # 🔢 Compter par source pour les graphiques
+    from collections import Counter
+    source_counts = Counter([p[2] for p in plates])
+    from datetime import datetime
+    date_counts = Counter([p[3][:10] for p in plates])
+    count_total = len(plates)
+    count_image = len([p for p in plates if p[2] == 'image'])
+    count_video = len([p for p in plates if p[2] == 'video'])
+    count_webcam = len([p for p in plates if p[2] == 'webcam'])
+    return render_template('history.html',
+                       plates=plates,
+                       source_counts=source_counts,
+                       date_counts=date_counts,
+                       selected_source=source,
+                       count_total=count_total,
+                       count_image=count_image,
+                       count_video=count_video,
+                       count_webcam=count_webcam)
     
 @app.route('/export-pdf')
 def export_pdf():

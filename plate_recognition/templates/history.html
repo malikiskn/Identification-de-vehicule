@@ -68,12 +68,28 @@
   <!-- 📤 Export + 🔍 Recherche -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <input type="text" id="searchInput" class="form-control w-50" placeholder="🔍 Rechercher une plaque, source ou date...">
+    <!-- 🔍 Filtrer par source -->
+<form method="get" class="mb-3 d-flex align-items-center gap-2">
+    <label class="me-2">Filtrer :</label>
+    <select name="source" onchange="this.form.submit()" class="form-select w-auto">
+        <option value="">Toutes</option>
+        <option value="image" {% if selected_source == 'image' %}selected{% endif %}>Image</option>
+        <option value="video" {% if selected_source == 'video' %}selected{% endif %}>Vidéo</option>
+        <option value="webcam" {% if selected_source == 'webcam' %}selected{% endif %}>Webcam</option>
+    </select>
+  </form>
     <div>
-      <a href="/export-pdf" class="btn btn-outline-danger me-2">📄 PDF</a>
-      <a href="/export-csv" class="btn btn-outline-primary">🧾 CSV</a>
+      <a href="/export-pdf" class="btn btn-outline-danger me-2">📄 Exporter en PDF</a>
+      <a href="/export-csv" class="btn btn-outline-primary">🧾 Exporter en CSV</a>
     </div>
   </div>
-
+<!-- 📊 Statistiques -->
+<div class="row text-center mb-4">
+    <div class="col"><div class="alert alert-primary">📊 Total : <strong>{{ count_total }}</strong></div></div>
+    <div class="col"><div class="alert alert-success">🖼️ Image : <strong>{{ count_image }}</strong></div></div>
+    <div class="col"><div class="alert alert-info">🎞️ Vidéo : <strong>{{ count_video }}</strong></div></div>
+    <div class="col"><div class="alert alert-warning">📷 Webcam : <strong>{{ count_webcam }}</strong></div></div>
+  </div>
   {% if plates %}
   <table class="table table-bordered table-hover text-center align-middle">
     <thead class="table-dark">
