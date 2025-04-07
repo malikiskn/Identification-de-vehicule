@@ -104,7 +104,7 @@
       {% for plate in plates %}
       <tr>
         <td>{{ plate[0] }}</td>
-        <td>{{ plate[1] }}</td>
+        <td><a href="{{ url_for('vehicle_detail', plate=plate[1]) }}">{{ plate[1] }}</a></td>
         <td>{{ plate[2] }}</td>
         <td>{{ plate[3] }}</td>
       </tr>

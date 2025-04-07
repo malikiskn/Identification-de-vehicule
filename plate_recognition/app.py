@@ -465,5 +465,12 @@ def add_plate():
 
     return render_template('add_plate.html')
 
+from vehicle_info import get_vehicle_details  # Assure-toi d’avoir bien importé
+
+@app.route('/plaque/<plate>')
+def vehicle_detail(plate):
+    data = get_vehicle_details(plate)
+    return render_template("vehicle_info.html", plate=plate, vehicle=data)
+
 if __name__ == '__main__':
     app.run(debug=True)
