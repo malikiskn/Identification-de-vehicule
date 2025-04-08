@@ -12,6 +12,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 import csv
 from flask import Response
+import time 
 app = Flask(__name__)
 
 app.secret_key = "supersecretkey"
@@ -45,8 +46,6 @@ def allowed_file(filename):
 def index():
     return render_template('index.html')
 
-
-# 🔹 Upload d’image
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
     file = request.files['file']
@@ -65,21 +64,34 @@ def upload_image():
 
     result_img, texts = yolo_predictions(image, net)
 
-    #Enregistre l'image affichée (toujours la dernière)
-    cv2.imwrite(RESULT_IMG_PATH, result_img)
-
-    #Enregistre chaque image annotée dans /static/exports avec un nom unique
+    # ✅ Nettoyage & récupération de la première plaque
     from datetime import datetime
-    image_name = f"image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    image_path = os.path.join(EXPORT_FOLDER, image_name)
-    cv2.imwrite(image_path, result_img)
-
+    now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    cleaned_plate = None
     for plate in texts:
         if plate and plate != 'no number':
-            save_plate(plate, source='image')
+            cleaned_plate = plate.replace(" ", "").replace("-", "").upper()
+            break
+
+    # ✅ Construction du nom de fichier
+    if cleaned_plate:
+        image_filename = f"{cleaned_plate}_{now_str}.jpg"
+    else:
+        image_filename = f"image_{now_str}.jpg"
+
+    # ✅ Sauvegarde dans /static/exports
+    image_path = os.path.join(EXPORT_FOLDER, image_filename)
+    cv2.imwrite(image_path, result_img)
+
+    # ✅ Enregistrement en base
+    for plate in texts:
+        if plate and plate != 'no number':
+            save_plate(plate, source='image', image_path=f"exports/{image_filename}")
+
+    # ✅ Sauvegarde pour affichage dans result.html
+    cv2.imwrite(RESULT_IMG_PATH, result_img)
 
     return redirect(url_for('result', media_type='image', plates=",".join(texts)))
-
 
 # 🔹 Upload de vidéo
 @app.route('/upload_video', methods=['POST'])
@@ -117,9 +129,16 @@ def upload_video():
     cap.release()
     out.release()
 
-    # 🔐 Sauvegarder chaque vidéo avec nom unique dans /static/exports
-    from datetime import datetime
-    video_name = f"video_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+     # ✅ Nettoyer les textes pour nom de fichier
+    cleaned_texts = [t.replace("-", "").replace(" ", "").upper() for t in texts if t and t != 'no number']
+    main_plate = cleaned_texts[0] if cleaned_texts else None
+
+    # ✅ Nom du fichier vidéo final
+    now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    if main_plate:
+        video_name = f"{main_plate}_{now_str}.mp4"
+    else:
+        video_name = f"video_{now_str}.mp4"
     video_path = os.path.join('static', 'exports', video_name)
 
     # Convertir AVI vers vidéo finale
@@ -131,13 +150,15 @@ def upload_video():
 
     for plate in texts:
         if plate and plate != 'no number':
-            save_plate(plate, source='video')
+            save_plate(plate, source='video', image_path=f"exports/{video_name}")
 
     return redirect(url_for('result', media_type='video', plates=",".join(texts), video_name=video_name))
 
-# 🔹 Webcam en direct
+
 @app.route('/use_webcam', methods=['POST'])
 def use_webcam():
+    from datetime import datetime
+
     cap = cv2.VideoCapture(0)
     net = cv2.dnn.readNetFromONNX('../runs/train/Model/weights/best.onnx')
     net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
@@ -152,37 +173,87 @@ def use_webcam():
 
     texts = []
     frame_count = 0
-    max_frames = fps * 5  # 5 secondes de capture
+    min_duration = fps * 5      # Minimum 5 secondes
+    max_duration = fps * 15     # Maximum 15 secondes
+    no_plate_counter = 0
+    no_plate_limit = fps * 2    # Si 2 sec sans plaque → stop
 
-    while frame_count < max_frames:
+    while frame_count < max_duration:
         ret, frame = cap.read()
         if not ret:
             break
+
         result_img, new_texts = yolo_predictions(frame, net)
         out.write(result_img)
         texts.extend(new_texts)
         frame_count += 1
 
+        if not any(t and t.lower() not in ['no number', 'no text'] for t in new_texts):
+            no_plate_counter += 1
+        else:
+            no_plate_counter = 0
+
+        if frame_count > min_duration and no_plate_counter > no_plate_limit:
+            print("🛑 Arrêt anticipé : plus de plaques détectées.")
+            break
+
     cap.release()
     out.release()
 
-    # Convertir .avi → .mp4
-    os.system(f"ffmpeg -y -i {RAW_VIDEO_PATH} -vcodec libx264 -crf 23 {RESULT_VIDEO_PATH}")
+    print("✅ Fichier temporaire écrit :", os.path.exists(RAW_VIDEO_PATH))
+    if not os.path.exists(RAW_VIDEO_PATH):
+        print("❌ Le fichier AVI n'a pas été généré.")
 
+    # Nettoyage pour nommage fichier
+    cleaned_texts = [t.replace("-", "").replace(" ", "").upper() for t in texts if t and t.upper() not in ['NO NUMBER', 'NO TEXT']]
+    main_plate = cleaned_texts[0] if cleaned_texts else None
+
+    now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    if main_plate:
+        final_name = f"{main_plate}_{now_str}.mp4"
+    else:
+        final_name = f"webcam_{now_str}.mp4"
+
+    result_path = os.path.join('static', 'exports', final_name)
+
+    # Conversion vidéo
+    ffmpeg_cmd = f"ffmpeg -y -i {RAW_VIDEO_PATH} -vcodec libx264 -crf 23 {result_path}"
+    print("🛠️ Exécution de FFMPEG :", ffmpeg_cmd)
+    os.system(ffmpeg_cmd)
+
+    print("🎬 Fichier converti :", result_path)
+    print("📁 Fichier existe ?", os.path.exists(result_path))
+
+    if os.path.exists(RAW_VIDEO_PATH):
+        os.remove(RAW_VIDEO_PATH)
+        print("🧹 Fichier temporaire supprimé.")
+
+    # Sauvegarde en base (hors NO TEXT et NO NUMBER)
     for plate in texts:
-        if plate and plate != 'no number':
-            save_plate(plate, source='webcam')
+        if plate and plate.upper() not in ['NO NUMBER', 'NO TEXT']:
+            print(f"💾 Sauvegarde DB pour : {plate} -> exports/{final_name}")
+            save_plate(plate, source='webcam', image_path=f"exports/{final_name}")
 
-    return redirect(url_for('result', media_type='video', plates=",".join(texts)))
+    # ✅ Affichage final sans fausses plaques
+    valid_texts = [t for t in texts if t and t.upper() not in ['NO NUMBER', 'NO TEXT']]
+    return redirect(url_for('result', media_type='video', plates=",".join(valid_texts), video_name=final_name))
 
 # 🔹 Résultat
+import time
+
 @app.route('/result')
 def result():
     plates = request.args.get("plates", "").split(",")
     media_type = request.args.get("media_type", "image")
-    video_name = request.args.get("video_name", "result_video.mp4")  # fallback
+    video_name = request.args.get("video_name", "result_video.mp4")
 
-    return render_template("result.html", media_type=media_type, plates=plates, video_name=video_name)
+    return render_template(
+        "result.html",
+        media_type=media_type,
+        plates=plates,
+        video_name=video_name,
+        time=time.time  # ⬅️ très important
+    )
 
 from flask import Response
 import threading
@@ -238,7 +309,8 @@ from flask import jsonify
 @app.route('/get_live_plates')
 def get_live_plates():
     global live_plates
-    return jsonify({"plates": live_plates})
+    clean = [p for p in live_plates if p.upper() not in ['NO TEXT', 'NO NUMBER']]
+    return jsonify({'plates': clean})
 
 @app.route('/webcam_live')
 def webcam_live():
@@ -375,17 +447,16 @@ def admin():
         count_webcam=count_webcam
     )
 
-@app.route('/delete/<int:id>', methods=['POST'])
+@app.route('/delete_plate/<int:id>', methods=['POST'])
 def delete_plate(id):
-    
+    print(f"Tentative de suppression de la plaque ID {id}")
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM plates WHERE id=?", (id,))
+    cur.execute("DELETE FROM plates WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    flash("✅ Plaque supprimée avec succès.")
+    flash("Plaque supprimée avec succès.")
     return redirect(url_for('admin'))
-
 
 @app.route('/delete_all', methods=['POST'])
 def delete_all():
@@ -465,12 +536,68 @@ def add_plate():
 
     return render_template('add_plate.html')
 
-from vehicle_info import get_vehicle_details  # Assure-toi d’avoir bien importé
 
-@app.route('/plaque/<plate>')
+@app.route('/detail/<plate>')
 def vehicle_detail(plate):
-    data = get_vehicle_details(plate)
-    return render_template("vehicle_info.html", plate=plate, vehicle=data)
+    from database import get_connection
+    from vehicle_info import get_vehicle_details  
+    import os
+
+    # 🔎 Connexion à la base
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM plates WHERE plate=? ORDER BY timestamp DESC", (plate,))
+    rows = cur.fetchall()
+    conn.close()
+
+    # 📸 Trouver une image liée
+    image_path = None
+    export_dir = os.path.join(app.static_folder, 'exports')
+    for file in os.listdir(export_dir):
+        if plate.replace(" ", "").replace("-", "").lower() in file.lower():
+            image_path = 'exports/' + file
+            break
+    print("🔍 Image trouvée pour la plaque :", image_path)
+    # ✅ Récupérer les infos de l'API simulée
+    vehicle_info = get_vehicle_details(plate)
+
+    return render_template("vehicle_info.html", plate=plate, vehicle_info=vehicle_info, image_path=image_path)
+
+@app.route('/delete_by_source', methods=['POST'])
+def delete_by_source():
+    source = request.form.get('source')
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM plates WHERE source = ?", (source,))
+    conn.commit()
+    conn.close()
+    flash(f"✅ Toutes les plaques de source {source} ont été supprimées.")
+    return redirect(url_for('admin'))
+
+@app.route('/delete_selected', methods=['POST'])
+def delete_selected():
+    ids = request.form.getlist('selected_ids')
+    if ids:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.executemany("DELETE FROM plates WHERE id = ?", [(id,) for id in ids])
+        conn.commit()
+        conn.close()
+        flash(f"✅ {len(ids)} plaque(s) supprimée(s) avec succès.")
+    else:
+        flash("❌ Aucune plaque sélectionnée.")
+    return redirect(url_for('admin'))
+
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    return r
+
+    
+from database import init_db
+init_db()
 
 if __name__ == '__main__':
     app.run(debug=True)

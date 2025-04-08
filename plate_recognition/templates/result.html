@@ -57,9 +57,7 @@
     <h2 class="text-success mb-4">✅ Résultat de la détection</h2>
 
     {% if media_type == "image" %}
-        <img src="{{ url_for('static', filename='result.jpg') }}" class="img-fluid rounded shadow">
-    
-    {% elif media_type == "video" %}
+    <img src="{{ url_for('static', filename='result.jpg') }}?t={{ time() }}" class="img-fluid">    {% elif media_type == "video" %}
         <video class="rounded shadow" width="700" controls autoplay muted loop>
             <source src="{{ url_for('static', filename='exports/' + video_name) }}" type="video/mp4">
             Votre navigateur ne supporte pas la vidéo.

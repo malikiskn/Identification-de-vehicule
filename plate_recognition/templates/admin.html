@@ -9,11 +9,7 @@
       background-color: #121212 !important;
       color: #f1f1f1;
     }
-
-    .dark-mode .table {
-      color: #fff;
-    }
-
+    .dark-mode .table,
     .dark-mode .btn,
     .dark-mode input,
     .dark-mode select,
@@ -22,51 +18,44 @@
       color: #fff;
       border-color: #444;
     }
-
     .dark-mode .navbar {
       background-color: #1f1f1f !important;
     }
-
-    .dark-mode .alert {
+    .dark-mode .alert,
+    .dark-mode .table-dark {
       background-color: #2a2a2a;
       border-color: #444;
     }
-
-    .dark-mode .table-dark {
-      background-color: #343a40;
+    td, th {
+      text-align: center;
+      vertical-align: middle;
     }
   </style>
 </head>
 <body class="bg-light" id="main-body">
 
-<!-- 🌐 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-    <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-        <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
-        🚘 ANPR
-      </a>
-      
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="mainNavbar">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
-        <li class="nav-item"><a class="nav-link" href="/history">📋 Historique</a></li>
-        
-      </ul>
-  
-      <!-- 🔘 Thème + Déconnexion -->
-      <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
-      <a href="/logout" class="btn btn-sm btn-outline-light ms-3">🔓 Se déconnecter</a>
-    </div>
-    
-  </nav>
-  {% with messages = get_flashed_messages() %}
+  <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+    <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
+    🚘 ANPR
+  </a>
+  <ul class="navbar-nav ms-auto">
+    <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
+    <li class="nav-item"><a class="nav-link" href="/history">📋 Historique</a></li>
+  </ul>
+  <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
+  <a href="/logout" class="btn btn-sm btn-outline-light ms-3">🔓 Se déconnecter</a>
+</nav>
+
+{% with messages = get_flashed_messages() %}
   {% if messages %}
-    <div class="alert alert-success alert-dismissible fade show my-3" role="alert">
-        {{ messages[0] }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+      <div class="toast align-items-center text-bg-success border-0 show">
+        <div class="d-flex">
+          <div class="toast-body">{{ messages[0] }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
     </div>
   {% endif %}
 {% endwith %}
@@ -78,11 +67,23 @@
     <a href="{{ url_for('add_plate') }}" class="btn btn-outline-primary">➕ Ajouter une plaque</a>
   </div>
 
-  <button class="btn btn-outline-danger mb-3" data-bs-toggle="modal" data-bs-target="#confirmDeleteAll">
-    🧹 Supprimer tout
-  </button>
+  <button class="btn btn-outline-danger mb-3" data-bs-toggle="modal" data-bs-target="#confirmDeleteAll">🧹 Supprimer tout</button>
 
-  <!-- Filtrage -->
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    <form action="/delete_by_source" method="post">
+      <input type="hidden" name="source" value="video">
+      <button class="btn btn-outline-warning">🗑️ Supprimer les vidéos</button>
+    </form>
+    <form action="/delete_by_source" method="post">
+      <input type="hidden" name="source" value="image">
+      <button class="btn btn-outline-success">🗑️ Supprimer les images</button>
+    </form>
+    <form action="/delete_by_source" method="post">
+      <input type="hidden" name="source" value="webcam">
+      <button class="btn btn-outline-info">🗑️ Supprimer les webcams</button>
+    </form>
+  </div>
+
   <form method="get" class="mb-3 d-flex align-items-center gap-2">
     <label class="me-2">Filtrer :</label>
     <select name="source" onchange="this.form.submit()" class="form-select w-auto">
@@ -93,88 +94,110 @@
     </select>
   </form>
 
-  <!-- Statistiques -->
   <div class="row text-center mb-4">
     <div class="col"><div class="alert alert-primary">📊 Total : <strong>{{ count_total }}</strong></div></div>
     <div class="col"><div class="alert alert-success">🖼️ Image : <strong>{{ count_image }}</strong></div></div>
     <div class="col"><div class="alert alert-info">🎞️ Vidéo : <strong>{{ count_video }}</strong></div></div>
     <div class="col"><div class="alert alert-warning">📷 Webcam : <strong>{{ count_webcam }}</strong></div></div>
   </div>
-<!-- 🔎 Barre de recherche -->
-<div class="mb-3">
+
+  <div class="mb-3">
     <input type="text" id="searchInput" class="form-control" placeholder="🔍 Rechercher une plaque, source ou date...">
   </div>
+
   {% if plates %}
-  <table class="table table-bordered table-hover text-center align-middle">
-    <thead class="table-dark">
-      <tr>
-        <th>ID</th>
-        <th>Plaque</th>
-        <th>Source</th>
-        <th>Date</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for plate in plates %}
-      <tr>
-        <td>{{ plate[0] }}</td>
-        <td>{{ plate[1] }}</td>
-        <td>{{ plate[2] }}</td>
-        <td>{{ plate[3] }}</td>
-        <td class="text-center">
-          <div class="d-flex gap-2 justify-content-center">
-            <!-- Modifier -->
-            <a href="{{ url_for('edit_plate', id=plate[0], from_page='admin') }}" class="btn btn-sm btn-warning">✏️</a>
+  <form id="delete-form" method="POST" action="{{ url_for('delete_selected') }}">
+    <div class="mb-2 text-end">
+      <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn">🗑️ Supprimer la sélection</button>
+    </div>
 
-            <!-- Supprimer -->
-            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ plate[0] }}">
-              🗑️
-            </button>
-          </div>
+    <table class="table table-bordered table-hover text-center align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th><input type="checkbox" id="select-all"></th>
+          <th>ID</th>
+          <th>Plaque</th>
+          <th>Source</th>
+          <th>Date</th>
+          <th>Image</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+     <!-- ✅ CODE ADMIN.HTML MODIFIÉ -->
+<!-- ✅ Corrige suppression individuelle en déplaçant les modales hors du <form> principal -->
 
-          <!-- Modale de confirmation individuelle -->
-          <div class="modal fade" id="confirmDeleteModal{{ plate[0] }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                  <h5 class="modal-title">❌ Supprimer la plaque</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                  Supprimer la plaque <strong>{{ plate[1] }}</strong> ?
-                </div>
-                <div class="modal-footer">
-                  <form action="{{ url_for('delete_plate', id=plate[0]) }}" method="post">
-                    <button type="submit" class="btn btn-danger">Oui, supprimer</button>
-                  </form>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                </div>
-              </div>
-            </div>
-          </div>
+<!-- ... Garder tout ton code tel qu'il est jusqu'à ici ... -->
 
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
+<tbody>
+    {% for plate in plates %}
+    <tr>
+      <td><input type="checkbox" name="selected_ids" value="{{ plate[0] }}"></td>
+      <td>{{ plate[0] }}</td>
+      <td><a href="{{ url_for('vehicle_detail', plate=plate[1]) }}" class="text-decoration-none">{{ plate[1] }}</a></td>
+      <td>{{ plate[2] }}</td>
+      <td>{{ plate[3] }}</td>
+      <td>
+        {% if plate[4] %}
+          <a href="{{ url_for('static', filename=plate[4]) }}" target="_blank">
+            <img src="{{ url_for('static', filename=plate[4]) }}?t={{ loop.index }}" width="80">
+          </a>
+        {% else %}
+          <span class="text-muted">–</span>
+        {% endif %}
+      </td>
+      <td>
+        <div class="d-flex gap-2 justify-content-center">
+          <a href="{{ url_for('edit_plate', id=plate[0], from_page='admin') }}" class="btn btn-sm btn-warning">✏️</a>
+          <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ plate[0] }}">
+            🗑️
+          </button>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
   </table>
+  </form> 
+  
+  <!-- ✅ MODALES DE SUPPRESSION INDIVIDUELLE (hors du formulaire) -->
+  {% for plate in plates %}
+  <div class="modal fade" id="deleteModal{{ plate[0] }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ plate[0] }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="deleteModalLabel{{ plate[0] }}">❌ Confirmation de suppression</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Es-tu sûr de vouloir supprimer la plaque <strong>{{ plate[1] }}</strong> ?
+        </div>
+        <div class="modal-footer">
+          <form action="{{ url_for('delete_plate', id=plate[0]) }}" method="post">
+            <button type="submit" class="btn btn-danger">Oui, supprimer</button>
+          </form>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}  
+      </tbody>
+    </table>
+  </form>
   {% else %}
     <p class="alert alert-info">Aucune plaque enregistrée.</p>
   {% endif %}
 </div>
 
-<!-- Modale suppression globale -->
-<div class="modal fade" id="confirmDeleteAll" tabindex="-1" aria-hidden="true">
+<!-- Modale pour supprimer tout -->
+<div class="modal fade" id="confirmDeleteAll" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title">⚠️ Supprimer toutes les plaques</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        Cette action est <strong>irréversible</strong>. Supprimer toutes les plaques ?
-      </div>
+      <div class="modal-body">Cette action est <strong>irréversible</strong>. Supprimer toutes les plaques ?</div>
       <div class="modal-footer">
         <form action="{{ url_for('delete_all') }}" method="post">
           <button type="submit" class="btn btn-danger">Oui, tout supprimer</button>
@@ -185,34 +208,53 @@
   </div>
 </div>
 
-<!-- Bootstrap JS + Thème -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  const toggleBtn = document.getElementById("toggle-theme");
-  const body = document.getElementById("main-body");
-
-  if (localStorage.getItem("theme") === "dark") {
-    body.classList.add("dark-mode");
-    toggleBtn.textContent = "🌞 Thème clair";
-  }
-
-  toggleBtn.addEventListener("click", () => {
+  document.getElementById("toggle-theme").addEventListener("click", () => {
+    const body = document.getElementById("main-body");
     body.classList.toggle("dark-mode");
     const mode = body.classList.contains("dark-mode") ? "dark" : "light";
-    toggleBtn.textContent = mode === "dark" ? "🌞 Thème clair" : "🌙 Thème sombre";
     localStorage.setItem("theme", mode);
+    document.getElementById("toggle-theme").textContent = mode === "dark" ? "🌞 Thème clair" : "🌙 Thème sombre";
+  });
+  if (localStorage.getItem("theme") === "dark") document.getElementById("main-body").classList.add("dark-mode");
+
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const value = this.value.toLowerCase();
+    document.querySelectorAll("table tbody tr").forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(value) ? "" : "none";
+    });
+  });
+
+  document.getElementById("select-all").addEventListener("change", function () {
+    document.querySelectorAll("input[name='selected_ids']").forEach(cb => cb.checked = this.checked);
+  });
+
+  document.getElementById("delete-selected-btn").addEventListener("click", function () {
+    const checked = document.querySelectorAll("input[name='selected_ids']:checked");
+    if (checked.length === 0) {
+      const modal = new bootstrap.Modal(document.getElementById("noSelectionModal"));
+      modal.show();
+    } else {
+      document.getElementById("delete-form").submit();
+    }
   });
 </script>
-<script>
-    document.getElementById("searchInput").addEventListener("input", function () {
-      const value = this.value.toLowerCase();
-      const rows = document.querySelectorAll("table tbody tr");
-  
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(value) ? "" : "none";
-      });
-    });
-  </script>
+
+<!-- Alerte aucune sélection -->
+<div class="modal fade" id="noSelectionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-warning text-dark">
+      <div class="modal-header">
+        <h5 class="modal-title">Aucune sélection</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">Veuillez sélectionner au moins une plaque à supprimer.</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -9,95 +9,94 @@
             background-color: #121212 !important;
             color: #f1f1f1;
         }
-    
+
         .dark-mode .btn {
             filter: brightness(0.9);
         }
-    
+
         .dark-mode .list-group-item {
             background-color: #1e1e1e;
             color: #f1f1f1;
             border-color: #444;
         }
-    
+
         .dark-mode img {
             box-shadow: 0 0 10px #000;
         }
     </style>
 </head>
 <body class="bg-light" id="main-body">
-     <!-- 🌐 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
     <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
-  
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-      <span class="navbar-toggler-icon"></span>
+        <span class="navbar-toggler-icon"></span>
     </button>
-  
     <div class="collapse navbar-collapse" id="mainNavbar">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/">🏠 Accueil</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/history">📋 Historique</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/admin">⚙️ Admin</a>
-        </li>
-        <li class="nav-item">
-          <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
-        </li>
-      </ul>
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
+            <li class="nav-item"><a class="nav-link" href="/history">📋 Historique</a></li>
+            <li class="nav-item"><a class="nav-link" href="/admin">⚙️ Admin</a></li>
+            <li class="nav-item">
+                <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
+            </li>
+        </ul>
     </div>
-  </nav>
-    <div class="text-end px-4 py-2">
-        <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
-    </div>  
+</nav>
+<div class="text-end px-4 py-2">
+    <button id="toggle-theme" class="btn btn-sm btn-outline-secondary">🌙 Activer le mode sombre</button>
+</div>
 <div class="container py-5 text-center">
     <h2 class="text-danger mb-4">📡 Webcam en direct</h2>
+
+    <!-- ✅ Alerte informative -->
+    <div class="alert alert-warning text-center w-75 mx-auto">
+        ⚠️ Les plaques détectées en direct ne seront pas enregistrées tant que vous n'avez pas cliqué sur
+        <strong>"🎥 Capturer & enregistrer le live"</strong>.
+    </div>
 
     <!-- Flux MJPEG en direct -->
     <img src="{{ url_for('stream') }}" width="700" class="rounded shadow mb-4">
 
+    <!-- ✅ Bouton d'enregistrement -->
+    <form action="/use_webcam" method="post" class="mb-4">
+        <button id="capture-btn" class="btn btn-danger mt-2" disabled>🎥 Capturer & enregistrer le live</button>    </form>
+
     <h4>📋 Plaques détectées :</h4>
-    <div id="plates" class="mb-3">
-        Chargement...
-    </div>
+    <div id="plates" class="mb-3">Chargement...</div>
 
     <a href="/" class="btn btn-primary">⬅️ Retour</a>
 </div>
 
 <script>
-    // Rafraîchir les plaques toutes les 2s
-    setInterval(() => {
-        fetch('/get_live_plates')
-            .then(res => res.json())
-            .then(data => {
-                const div = document.getElementById('plates');
-                if (data.plates.length === 0) {
-                    div.innerHTML = "<i class='text-muted'>Aucune plaque détectée</i>";
-                } else {
-                    div.innerHTML = "<ul class='list-group mx-auto' style='max-width: 400px;'>" +
-                        data.plates.map(p => `<li class='list-group-item'>${p}</li>`).join("") +
-                        "</ul>";
-                }
-            });
-    }, 2000);
-</script>
+  // Rafraîchir les plaques toutes les 2s
+  setInterval(() => {
+    fetch('/get_live_plates')
+      .then(res => res.json())
+      .then(data => {
+        const div = document.getElementById('plates');
+        const btn = document.getElementById('capture-btn');
 
-<script>
+        if (data.plates.length === 0) {
+          div.innerHTML = "<i class='text-muted'>Aucune plaque détectée</i>";
+          btn.disabled = true;  // 🔒 désactiver bouton
+        } else {
+          div.innerHTML = "<ul class='list-group mx-auto' style='max-width: 400px;'>" +
+                          data.plates.map(p => `<li class='list-group-item'>${p}</li>`).join("") +
+                          "</ul>";
+          btn.disabled = false; // ✅ activer bouton
+        }
+      });
+  }, 2000);
+
+
     const toggleBtn = document.getElementById("toggle-theme");
     const body = document.getElementById("main-body");
-
     if (localStorage.getItem("theme") === "dark") {
         body.classList.add("dark-mode");
         toggleBtn.textContent = "🌞 Activer le mode clair";
     }
-
     toggleBtn.addEventListener("click", () => {
         body.classList.toggle("dark-mode");
-
         if (body.classList.contains("dark-mode")) {
             localStorage.setItem("theme", "dark");
             toggleBtn.textContent = "🌞 Activer le mode clair";
@@ -106,6 +105,7 @@
             toggleBtn.textContent = "🌙 Activer le mode sombre";
         }
     });
+
 </script>
 
 </body>

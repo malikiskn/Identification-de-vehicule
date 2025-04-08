@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Détection de Plaques</title>
-  
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body.dark-mode {
       background-color: #121212 !important;
       color: #f1f1f1;
     }
-
     .dark-mode .btn,
     .dark-mode input,
     .dark-mode select,
@@ -19,13 +17,11 @@
       color: #fff;
       border-color: #444;
     }
-
     footer {
       position: relative;
       bottom: 0;
       width: 100%;
     }
-
     .intro-img {
       max-height: 280px;
       object-fit: cover;
@@ -36,25 +32,17 @@
 </head>
 <body class="bg-light" id="main-body">
 
-  <!-- 🌐 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
     <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
-  
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
       <span class="navbar-toggler-icon"></span>
     </button>
-  
     <div class="collapse navbar-collapse" id="mainNavbar">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/">🏠 Accueil</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/history">📋 Historique</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/admin">⚙️ Admin</a>
-        </li>
+        <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
+        <li class="nav-item"><a class="nav-link" href="/history">📋 Historique</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin">⚙️ Admin</a></li>
         <li class="nav-item">
           <button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button>
         </li>
@@ -62,84 +50,66 @@
     </div>
   </nav>
 
+  <!-- Logo + titre -->
   <div class="container py-5 text-center">
-<!-- juste dans ton <body> après le <div class="container py-5 text-center"> -->
     <div class="d-flex align-items-center justify-content-center mb-4">
-        <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo université" width="90" class="me-4" style="max-height: 120px;">
-        <h1 class="text-primary mb-0">🚘 Bienvenue sur notre plateforme ANPR</h1>
-      </div>
-
+      <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo université" width="90" class="me-4" style="max-height: 120px;">
+      <h1 class="text-primary mb-0">🚘 Bienvenue sur notre plateforme ANPR</h1>
+    </div>
     <p class="lead mb-5">
       Cette application utilise <strong>l’IA</strong> et <strong>YOLOv5</strong> pour détecter automatiquement les plaques d’immatriculation
       sur des images, vidéos ou via une webcam en temps réel.
     </p>
-<!-- 🎞️ Carrousel d'images (à la place de l'image fixe) -->
-<div id="carouselImages" class="carousel slide mb-5 mx-auto" data-bs-ride="carousel" style="max-width: 700px;">
-    <div class="carousel-inner rounded shadow">
-      <div class="carousel-item active">
-        <img src="{{ url_for('static', filename='images/image1.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;" alt="image1">
+
+    <!-- Carrousel -->
+    <div id="carouselImages" class="carousel slide mb-5 mx-auto" data-bs-ride="carousel" style="max-width: 700px;">
+      <div class="carousel-inner rounded shadow">
+        <div class="carousel-item active">
+          <img src="{{ url_for('static', filename='images/image1.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+        </div>
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='images/image2.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+        </div>
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='images/image3.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+        </div>
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='images/image4.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+        </div>
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='images/image5.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+        </div>
       </div>
-      <div class="carousel-item">
-        <img src="{{ url_for('static', filename='images/image2.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;" alt="image2">
-      </div>
-      <div class="carousel-item">
-        <img src="{{ url_for('static', filename='images/image3.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;" alt="image3">
-      </div>
-      <div class="carousel-item">
-        <img src="{{ url_for('static', filename='images/image4.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;" alt="image3">
-      </div>
-      <div class="carousel-item">
-        <img src="{{ url_for('static', filename='images/image5.jpg') }}" class="d-block w-100" style="max-height: 300px; object-fit: cover;" alt="image3">
-      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#carouselImages" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#carouselImages" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+      </button>
     </div>
-  
-    <button class="carousel-control-prev" type="button" data-bs-target="#carouselImages" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#carouselImages" data-bs-slide="next">
-      <span class="carousel-control-next-icon"></span>
-    </button>
-  </div>
- 
-<!-- 📤 Uploads organisés -->
-<div class="container my-5">
+
+    <!-- Uploads -->
     <div class="row justify-content-center gy-4">
-  
       <!-- Image -->
       <div class="col-md-5 col-lg-4">
         <form action="/upload_image" method="post" enctype="multipart/form-data" class="p-3 border rounded shadow-sm bg-white">
           <h5 class="mb-3 text-primary">🖼️ Image</h5>
-        <input type="file" id="imageInput" name="file" accept="image/*" class="form-control mb-2" required>
-        <small id="imageFileName" class="text-muted">Aucune image sélectionnée</small>
-
-        <script>
-        document.getElementById('imageInput').addEventListener('change', function() {
-            const fileName = this.files[0] ? this.files[0].name : "Aucun fichier sélectionné";
-            document.getElementById('imageFileName').textContent = fileName;
-        });
-        </script>
-
-          <button type="submit" class="btn btn-primary w-100">Analyser</button>
+          <input type="file" id="imageInput" name="file" accept="image/*" class="form-control mb-2" required>
+          <small id="imageFileName" class="text-muted">Aucune image sélectionnée</small>
+          <button type="submit" class="btn btn-primary w-100 mt-2">Analyser</button>
         </form>
       </div>
-  
+
       <!-- Vidéo -->
       <div class="col-md-5 col-lg-4">
         <form action="/upload_video" method="post" enctype="multipart/form-data" class="p-3 border rounded shadow-sm bg-white">
           <h5 class="mb-3 text-success">🎥 Vidéo</h5>
-            <input type="file" id="videoInput" name="file" accept="video/*" class="form-control mb-2" required>
-            <small id="videoFileName" class="text-muted">Aucune vidéo sélectionnée</small>
-
-            <script>
-            document.getElementById('videoInput').addEventListener('change', function () {
-                const fileName = this.files[0] ? this.files[0].name : "Aucune vidéo sélectionnée";
-                document.getElementById('videoFileName').textContent = fileName;
-            });
-            </script>
-          <button type="submit" class="btn btn-success w-100">Analyser</button>
+          <input type="file" id="videoInput" name="file" accept="video/*" class="form-control mb-2" required>
+          <small id="videoFileName" class="text-muted">Aucune vidéo sélectionnée</small>
+          <button type="submit" class="btn btn-success w-100 mt-2">Analyser</button>
         </form>
       </div>
-  
+
       <!-- Webcam -->
       <div class="col-md-5 col-lg-4">
         <form action="/webcam_live" method="get" class="p-3 border rounded shadow-sm bg-white">
@@ -147,14 +117,21 @@
           <button type="submit" class="btn btn-danger w-100">Lancer</button>
         </form>
       </div>
-  
-      
-  
     </div>
   </div>
-  <!-- 📌 Footer -->
+
+  <!-- Overlay -->
+  <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="text-white text-center">
+      <div class="spinner-border text-light mb-3" role="status"></div>
+      <h4>Analyse en cours...</h4>
+      <p>Veuillez patienter, la vidéo est en train d’être analysée.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
   <footer class="bg-dark text-white text-center py-3 mt-5">
-    Projet ANPR © 2025 – Réalisé par Malick SOKHONA & Alexendre 🚀
+    Projet ANPR © 2025 – Réalisé par Malick SOKHONA & Alexandre 🚀
   </footer>
 
   <!-- JS -->
@@ -162,24 +139,18 @@
   <script>
     const toggleBtn = document.getElementById("toggle-theme");
     const body = document.getElementById("main-body");
-
     if (localStorage.getItem("theme") === "dark") {
       body.classList.add("dark-mode");
       toggleBtn.textContent = "🌞 Activer le mode clair";
     }
-
     toggleBtn.addEventListener("click", () => {
       body.classList.toggle("dark-mode");
-      if (body.classList.contains("dark-mode")) {
-        localStorage.setItem("theme", "dark");
-        toggleBtn.textContent = "🌞 Activer le mode clair";
-      } else {
-        localStorage.setItem("theme", "light");
-        toggleBtn.textContent = "🌙 Activer le mode sombre";
-      }
+      const mode = body.classList.contains("dark-mode") ? "dark" : "light";
+      toggleBtn.textContent = mode === "dark" ? "🌞 Activer le mode clair" : "🌙 Activer le mode sombre";
+      localStorage.setItem("theme", mode);
     });
   </script>
-<script>
+  <script>
     const carousel = document.querySelector('#carouselImages');
     if (carousel) {
       new bootstrap.Carousel(carousel, {
@@ -187,18 +158,27 @@
         ride: 'carousel'
       });
     }
-    // 🌀 Affiche le loader quand on soumet le formulaire vidéo
-document.querySelector('form[action="/upload_video"]').addEventListener('submit', () => {
-    document.getElementById('loading-overlay').style.display = 'flex';
-});
   </script>
-  <!-- 💬 Overlay de chargement -->
-<div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-    <div class="text-white text-center">
-      <div class="spinner-border text-light mb-3" role="status"></div>
-      <h4>Analyse en cours...</h4>
-      <p>Veuillez patienter, la vidéo est en train d’être analysée.</p>
-    </div>
-  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const forms = document.querySelectorAll("form[action='/upload_video'], form[action='/webcam_live']");
+      forms.forEach(form => {
+        form.addEventListener("submit", function () {
+          const overlay = document.getElementById("loading-overlay");
+          if (overlay) overlay.style.display = "flex";
+        });
+      });
+    });
+  </script>
+  <script>
+    document.getElementById('imageInput').addEventListener('change', function() {
+      const fileName = this.files[0] ? this.files[0].name : "Aucun fichier sélectionné";
+      document.getElementById('imageFileName').textContent = fileName;
+    });
+    document.getElementById('videoInput').addEventListener('change', function() {
+      const fileName = this.files[0] ? this.files[0].name : "Aucune vidéo sélectionnée";
+      document.getElementById('videoFileName').textContent = fileName;
+    });
+  </script>
 </body>
 </html>

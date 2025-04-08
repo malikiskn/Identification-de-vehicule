@@ -30,6 +30,22 @@
     .dark-mode .table-dark th {
       background-color: #222 !important;
     }
+
+    td, th {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .zoom-on-hover {
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    .zoom-on-hover:hover {
+      transform: scale(1.3);
+      z-index: 10;
+      position: relative;
+    }
   </style>
 </head>
 <body class="bg-light" id="main-body">
@@ -40,7 +56,6 @@
     <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo" width="40" class="me-2">
     🚘 ANPR
   </a>
-
   <div class="collapse navbar-collapse">
     <ul class="navbar-nav ms-auto">
       <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
@@ -53,7 +68,7 @@
 </nav>
 
 <div class="container py-4">
-  <!-- 📈 Statistiques -->
+  <!-- 📊 Graphiques -->
   <div class="row mb-5">
     <div class="col-md-6 d-flex flex-column align-items-center">
       <h6>📊 Répartition des sources</h6>
@@ -65,65 +80,132 @@
     </div>
   </div>
 
-  <!-- 📤 Export + 🔍 Recherche -->
+  <!-- 🔎 Recherche + 📤 Export -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <input type="text" id="searchInput" class="form-control w-50" placeholder="🔍 Rechercher une plaque, source ou date...">
-    <!-- 🔍 Filtrer par source -->
-<form method="get" class="mb-3 d-flex align-items-center gap-2">
-    <label class="me-2">Filtrer :</label>
-    <select name="source" onchange="this.form.submit()" class="form-select w-auto">
+    <form method="get" class="d-flex align-items-center gap-2">
+      <label class="me-2">Filtrer :</label>
+      <select name="source" onchange="this.form.submit()" class="form-select w-auto">
         <option value="">Toutes</option>
         <option value="image" {% if selected_source == 'image' %}selected{% endif %}>Image</option>
         <option value="video" {% if selected_source == 'video' %}selected{% endif %}>Vidéo</option>
         <option value="webcam" {% if selected_source == 'webcam' %}selected{% endif %}>Webcam</option>
-    </select>
-  </form>
+      </select>
+    </form>
     <div>
       <a href="/export-pdf" class="btn btn-outline-danger me-2">📄 Exporter en PDF</a>
       <a href="/export-csv" class="btn btn-outline-primary">🧾 Exporter en CSV</a>
     </div>
   </div>
-<!-- 📊 Statistiques -->
-<div class="row text-center mb-4">
+
+  <!-- 🔢 Statistiques -->
+  <div class="row text-center mb-4">
     <div class="col"><div class="alert alert-primary">📊 Total : <strong>{{ count_total }}</strong></div></div>
     <div class="col"><div class="alert alert-success">🖼️ Image : <strong>{{ count_image }}</strong></div></div>
     <div class="col"><div class="alert alert-info">🎞️ Vidéo : <strong>{{ count_video }}</strong></div></div>
     <div class="col"><div class="alert alert-warning">📷 Webcam : <strong>{{ count_webcam }}</strong></div></div>
   </div>
+
   {% if plates %}
-  <table class="table table-bordered table-hover text-center align-middle">
+  <table class="table table-bordered table-hover align-middle text-center">
     <thead class="table-dark">
       <tr>
         <th>ID</th>
         <th>Plaque</th>
         <th>Source</th>
         <th>Date</th>
+        <th>Image</th>
+        <th>Vidéo</th>
       </tr>
     </thead>
     <tbody>
       {% for plate in plates %}
       <tr>
         <td>{{ plate[0] }}</td>
-        <td><a href="{{ url_for('vehicle_detail', plate=plate[1]) }}">{{ plate[1] }}</a></td>
+        <td>
+          <a href="{{ url_for('vehicle_detail', plate=plate[1]) }}" class="fw-bold text-decoration-none">
+            {{ plate[1] }}
+          </a>
+        </td>
         <td>{{ plate[2] }}</td>
         <td>{{ plate[3] }}</td>
+        <td>
+          {% if plate|length > 4 and plate[4] %}
+            <img src="{{ url_for('static', filename=plate[4]) }}"
+                 class="rounded shadow-sm zoom-on-hover"
+                 width="80"
+                 data-bs-toggle="modal"
+                 data-bs-target="#modalImage{{ plate[0] }}"
+                 alt="Image">
+            <div class="modal fade" id="modalImage{{ plate[0] }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content bg-dark text-white">
+                  <div class="modal-header border-0">
+                    <h5 class="modal-title">Image pour {{ plate[1] }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                  </div>
+                  <div class="modal-body text-center">
+                    <img src="{{ url_for('static', filename=plate[4]) }}" class="img-fluid rounded shadow">
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        
+        <!-- 🎞️ Mini bouton d'affichage de vidéo -->
+<td>
+    {% if plate[2] == 'video' or plate[2] == 'webcam' %}
+      <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal{{ plate[0] }}">
+        ▶️ Voir
+      </button>
+  
+      <!-- Modale Bootstrap -->
+      <div class="modal fade" id="videoModal{{ plate[0] }}" tabindex="-1" aria-labelledby="videoLabel{{ plate[0] }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+              <h5 class="modal-title">🎥 Vidéo pour {{ plate[1] }}</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+              {% if plate[4] %}
+                <video controls class="w-100 rounded shadow">
+                  <source src="{{ url_for('static', filename=plate[4]) }}" type="video/mp4">
+                  Votre navigateur ne supporte pas les vidéos HTML5.
+                </video>
+              {% else %}
+                <p class="text-warning">Aucune vidéo trouvée.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <span class="text-muted">—</span>
+    {% endif %}
+  </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-    <p class="alert alert-info">Aucune plaque détectée.</p>
+  <p class="alert alert-info">Aucune plaque détectée.</p>
   {% endif %}
 
   <a href="/" class="btn btn-secondary mt-4">⬅️ Retour à l'accueil</a>
 </div>
 
-<!-- 🔻 Footer -->
 <footer class="bg-dark text-white text-center py-3 mt-5">
   Projet ANPR © 2025 – Malick SOKHONA & Alexandre 🚀
 </footer>
 
-<!-- 🌓 Thème -->
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🌙 Thème -->
 <script>
   const toggleBtn = document.getElementById("toggle-theme");
   const body = document.getElementById("main-body");
@@ -141,7 +223,7 @@
   });
 </script>
 
-<!-- 🔍 Recherche temps réel -->
+<!-- 🔍 Recherche -->
 <script>
   document.getElementById("searchInput").addEventListener("input", function () {
     const value = this.value.toLowerCase();
@@ -152,7 +234,7 @@
   });
 </script>
 
-<!-- 📊 Graphiques -->
+<!-- 📈 Charts -->
 <script>
   const sourceCtx = document.getElementById('sourceChart').getContext('2d');
   new Chart(sourceCtx, {

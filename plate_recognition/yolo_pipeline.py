@@ -143,12 +143,12 @@ def yolo_predictions(img, net):
 
     for ind in index:
         text = extract_text(result_img, boxes_np[ind])
-        if text == '':
-            text = 'NO TEXT'
-        texts.append(text)
+        if text.strip():  
+            texts.append(text)
 
     result_img = drawings(result_img, boxes_np, confidences_np, index)
-    return result_img, texts
+
+    return result_img, texts  
 
 
 # Cette fonction utilise Tesseract OCR pour lire le texte contenu dans une boîte (bbox).
