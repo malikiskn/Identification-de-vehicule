@@ -16,7 +16,7 @@ result_img, texts = yolo_predictions(image, net)
 # Enregistrement dans la base
 for plate in texts:
     if plate and plate != 'no number':
-        save_plate(plate, source="image_test", db_name="detections.db")
+        save_plate(plate, source="image_test",db_name="detections.db")
         print("Plaques détectées :", texts)
 from database import get_all_plates
 for row in get_all_plates():

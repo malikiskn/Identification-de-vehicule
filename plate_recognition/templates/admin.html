@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Admin - Gestion des plaques</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body.dark-mode {
       background-color: #121212 !important;
@@ -63,25 +64,44 @@
 <div class="container py-5">
   <h2 class="text-danger mb-4">⚙️ Admin - Gestion des plaques</h2>
 
+  <!-- 📊 Graphiques -->
+  <div class="row mb-5">
+    <div class="col-md-6 d-flex flex-column align-items-center">
+      <h6>📊 Répartition des sources</h6>
+      <canvas id="sourceChart" style="max-width: 300px; max-height: 300px;"></canvas>
+    </div>
+    <div class="col-md-6 d-flex flex-column align-items-center">
+      <h6>📅 Plaques par date</h6>
+      <canvas id="dateChart" style="max-width: 350px; max-height: 300px;"></canvas>
+    </div>
+  </div>
+
   <div class="mb-3 text-end">
     <a href="{{ url_for('add_plate') }}" class="btn btn-outline-primary">➕ Ajouter une plaque</a>
   </div>
 
   <button class="btn btn-outline-danger mb-3" data-bs-toggle="modal" data-bs-target="#confirmDeleteAll">🧹 Supprimer tout</button>
 
-  <div class="mb-3 d-flex flex-wrap gap-2">
-    <form action="/delete_by_source" method="post">
-      <input type="hidden" name="source" value="video">
-      <button class="btn btn-outline-warning">🗑️ Supprimer les vidéos</button>
-    </form>
-    <form action="/delete_by_source" method="post">
-      <input type="hidden" name="source" value="image">
-      <button class="btn btn-outline-success">🗑️ Supprimer les images</button>
-    </form>
-    <form action="/delete_by_source" method="post">
-      <input type="hidden" name="source" value="webcam">
-      <button class="btn btn-outline-info">🗑️ Supprimer les webcams</button>
-    </form>
+  <div class="mb-3 d-flex flex-wrap justify-content-between align-items-center">
+    <div class="d-flex gap-2 flex-wrap">
+      <form action="/delete_by_source" method="post">
+        <input type="hidden" name="source" value="video">
+        <button class="btn btn-outline-warning">🗑️ Supprimer les vidéos</button>
+      </form>
+      <form action="/delete_by_source" method="post">
+        <input type="hidden" name="source" value="image">
+        <button class="btn btn-outline-success">🗑️ Supprimer les images</button>
+      </form>
+      <form action="/delete_by_source" method="post">
+        <input type="hidden" name="source" value="webcam">
+        <button class="btn btn-outline-info">🗑️ Supprimer les webcams</button>
+      </form>
+    </div>
+  
+    <div class="d-flex gap-2 mt-2 mt-md-0">
+      <a href="/export-pdf" class="btn btn-outline-danger">📄 Exporter en PDF</a>
+      <a href="/export-csv" class="btn btn-outline-primary">🧾 Exporter en CSV</a>
+    </div>
   </div>
 
   <form method="get" class="mb-3 d-flex align-items-center gap-2">
@@ -123,43 +143,33 @@
           <th>Action</th>
         </tr>
       </thead>
-     <!-- ✅ CODE ADMIN.HTML MODIFIÉ -->
-<!-- ✅ Corrige suppression individuelle en déplaçant les modales hors du <form> principal -->
+      <tbody>
+        {% for plate in plates %}
+        <tr>
+          <td><input type="checkbox" name="selected_ids" value="{{ plate[0] }}"></td>
+          <td>{{ plate[0] }}</td>
+          <td><a href="{{ url_for('vehicle_detail', plate=plate[1]) }}" class="text-decoration-none">{{ plate[1] }}</a></td>
+          <td>{{ plate[2] }}</td>
+          <td>{{ plate[3] }}</td>
+          <td>
+            {% if plate[4] %}
+              <a href="{{ url_for('static', filename=plate[4]) }}" target="_blank">
+                <img src="{{ url_for('static', filename=plate[4]) }}?t={{ loop.index }}" width="80">
+              </a>
+            {% else %}<span class="text-muted">–</span>{% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2 justify-content-center">
+              <a href="{{ url_for('edit_plate', id=plate[0], from_page='admin') }}" class="btn btn-sm btn-warning">✏️</a>
+              <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ plate[0] }}">🗑️</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
 
-<!-- ... Garder tout ton code tel qu'il est jusqu'à ici ... -->
-
-<tbody>
-    {% for plate in plates %}
-    <tr>
-      <td><input type="checkbox" name="selected_ids" value="{{ plate[0] }}"></td>
-      <td>{{ plate[0] }}</td>
-      <td><a href="{{ url_for('vehicle_detail', plate=plate[1]) }}" class="text-decoration-none">{{ plate[1] }}</a></td>
-      <td>{{ plate[2] }}</td>
-      <td>{{ plate[3] }}</td>
-      <td>
-        {% if plate[4] %}
-          <a href="{{ url_for('static', filename=plate[4]) }}" target="_blank">
-            <img src="{{ url_for('static', filename=plate[4]) }}?t={{ loop.index }}" width="80">
-          </a>
-        {% else %}
-          <span class="text-muted">–</span>
-        {% endif %}
-      </td>
-      <td>
-        <div class="d-flex gap-2 justify-content-center">
-          <a href="{{ url_for('edit_plate', id=plate[0], from_page='admin') }}" class="btn btn-sm btn-warning">✏️</a>
-          <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ plate[0] }}">
-            🗑️
-          </button>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-  </table>
-  </form> 
-  
-  <!-- ✅ MODALES DE SUPPRESSION INDIVIDUELLE (hors du formulaire) -->
   {% for plate in plates %}
   <div class="modal fade" id="deleteModal{{ plate[0] }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ plate[0] }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -168,9 +178,7 @@
           <h5 class="modal-title" id="deleteModalLabel{{ plate[0] }}">❌ Confirmation de suppression</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
-          Es-tu sûr de vouloir supprimer la plaque <strong>{{ plate[1] }}</strong> ?
-        </div>
+        <div class="modal-body">Supprimer la plaque <strong>{{ plate[1] }}</strong> ?</div>
         <div class="modal-footer">
           <form action="{{ url_for('delete_plate', id=plate[0]) }}" method="post">
             <button type="submit" class="btn btn-danger">Oui, supprimer</button>
@@ -180,16 +188,10 @@
       </div>
     </div>
   </div>
-  {% endfor %}  
-      </tbody>
-    </table>
-  </form>
-  {% else %}
-    <p class="alert alert-info">Aucune plaque enregistrée.</p>
-  {% endif %}
+  {% endfor %}
+  {% else %}<p class="alert alert-info">Aucune plaque enregistrée.</p>{% endif %}
 </div>
 
-<!-- Modale pour supprimer tout -->
 <div class="modal fade" id="confirmDeleteAll" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -210,14 +212,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  document.getElementById("toggle-theme").addEventListener("click", () => {
-    const body = document.getElementById("main-body");
+  const toggleBtn = document.getElementById("toggle-theme");
+  const body = document.getElementById("main-body");
+  if (localStorage.getItem("theme") === "dark") {
+    body.classList.add("dark-mode");
+    toggleBtn.textContent = "🌞 Thème clair";
+  }
+  toggleBtn.addEventListener("click", () => {
     body.classList.toggle("dark-mode");
     const mode = body.classList.contains("dark-mode") ? "dark" : "light";
     localStorage.setItem("theme", mode);
-    document.getElementById("toggle-theme").textContent = mode === "dark" ? "🌞 Thème clair" : "🌙 Thème sombre";
+    toggleBtn.textContent = mode === "dark" ? "🌞 Thème clair" : "🌙 Thème sombre";
   });
-  if (localStorage.getItem("theme") === "dark") document.getElementById("main-body").classList.add("dark-mode");
 
   document.getElementById("searchInput").addEventListener("input", function () {
     const value = this.value.toLowerCase();
@@ -239,9 +245,38 @@
       document.getElementById("delete-form").submit();
     }
   });
+
+  const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+  new Chart(sourceCtx, {
+    type: 'pie',
+    data: {
+      labels: {{ source_counts.keys()|list|tojson }},
+      datasets: [{
+        data: {{ source_counts.values()|list|tojson }},
+        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#17a2b8']
+      }]
+    }
+  });
+
+  const dateCtx = document.getElementById('dateChart').getContext('2d');
+  new Chart(dateCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ date_counts.keys()|list|tojson }},
+      datasets: [{
+        label: 'Plaques détectées',
+        data: {{ date_counts.values()|list|tojson }},
+        backgroundColor: '#17a2b8'
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
 </script>
 
-<!-- Alerte aucune sélection -->
 <div class="modal fade" id="noSelectionModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-warning text-dark">

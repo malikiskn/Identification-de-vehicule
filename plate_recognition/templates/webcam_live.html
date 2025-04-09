@@ -78,12 +78,12 @@
 
         if (data.plates.length === 0) {
           div.innerHTML = "<i class='text-muted'>Aucune plaque détectée</i>";
-          btn.disabled = true;  // 🔒 désactiver bouton
+          btn.disabled = true;  
         } else {
           div.innerHTML = "<ul class='list-group mx-auto' style='max-width: 400px;'>" +
                           data.plates.map(p => `<li class='list-group-item'>${p}</li>`).join("") +
                           "</ul>";
-          btn.disabled = false; // ✅ activer bouton
+          btn.disabled = false; 
         }
       });
   }, 2000);

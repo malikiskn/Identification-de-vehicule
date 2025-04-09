@@ -433,10 +433,16 @@ def admin():
     if source:
         rows = [row for row in rows if row[2] == source]
 
+    # Compteurs
     count_total = len(rows)
     count_image = sum(1 for r in rows if r[2] == "image")
     count_video = sum(1 for r in rows if r[2] == "video")
     count_webcam = sum(1 for r in rows if r[2] == "webcam")
+
+    # Données graphiques
+    from collections import Counter
+    source_counts = Counter([r[2] for r in rows])
+    date_counts = Counter([r[3][:10] for r in rows])
 
     return render_template('admin.html',
         plates=rows,
@@ -444,7 +450,9 @@ def admin():
         count_total=count_total,
         count_image=count_image,
         count_video=count_video,
-        count_webcam=count_webcam
+        count_webcam=count_webcam,
+        source_counts=source_counts,
+        date_counts=date_counts
     )
 
 @app.route('/delete_plate/<int:id>', methods=['POST'])
