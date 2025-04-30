@@ -227,5 +227,5 @@ exports/
 /static/result_video.mp4
 /static/raw_video.avi
 /static/exports/*
-/data_images/*
+/data_images/
 __pycache__/
