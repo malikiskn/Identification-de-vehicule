@@ -23,7 +23,7 @@ import plotly.express as px
 cette fonction transforme l’image pour YOLO et récupère les prédictions brutes du modèle.
 '''
 def get_detections(img, net):
-    # 🧪 1. Prétraitement de l'image (augmentation du contraste)
+    #1. Prétraitement de l'image (augmentation du contraste)
     image = img.copy()
     # Convertit en niveaux de gris
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
@@ -32,17 +32,17 @@ def get_detections(img, net):
     # Revenir en BGR pour compatibilité modèle                                       
     image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)                        
 
-    # 🟪 2. Adapter l'image au format carré YOLO
+    # 2. Adapter l'image au format carré YOLO
     row, col, d = image.shape
     max_rc = max(row, col)
     input_image = np.zeros((max_rc, max_rc, 3), dtype=np.uint8)
     input_image[0:row, 0:col] = image
 
-    # 📦 3. Préparer l'image pour le modèle
+    # 3. Préparer l'image pour le modèle
     blob = cv2.dnn.blobFromImage(input_image, 1/255, (INPUT_WIDTH, INPUT_HEIGHT), swapRB=True, crop=False)
     net.setInput(blob)
 
-    # 📤 4. Obtenir les prédictions
+    # 4. Obtenir les prédictions
     preds = net.forward()
     detections = preds[0]
 
@@ -60,7 +60,7 @@ NMS garde seulement la meilleure boîte, ce qui rend les résultats propres.
 from config import INPUT_WIDTH, INPUT_HEIGHT, CONFIDENCE_THRESHOLD, CLASS_SCORE_THRESHOLD, NMS_THRESHOLD
 
 def non_maximum_supression(input_image, detections):
-    # 🎯 Étape 3 : Filtrer les détections avec les bons seuils
+    #Étape 3 : Filtrer les détections avec les bons seuils
     boxes = []
     confidences = []
 
@@ -89,7 +89,7 @@ def non_maximum_supression(input_image, detections):
     boxes_np = np.array(boxes).tolist()
     confidences_np = np.array(confidences).tolist()
 
-    # 🎯 Étape 4 : NMS avec seuil configurable
+    #Étape 4 : NMS avec seuil configurable
     index = cv2.dnn.NMSBoxes(boxes_np, confidences_np, CLASS_SCORE_THRESHOLD, NMS_THRESHOLD)
 
     return boxes_np, confidences_np, index
@@ -111,15 +111,15 @@ def drawings(image, boxes_np, confidences_np, index):
         if license_text == '':
             license_text = 'NO TEXT'
 
-        # 🔲 Boîte principale (rose)
+        # Boîte principale (rose)
         cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 255), 2)
 
-        # 🟪 Fond rose pour la confiance
+        # Fond rose pour la confiance
         cv2.rectangle(image, (x, y - 30), (x + w, y), (255, 0, 255), -1)
         cv2.putText(image, conf_text, (x, y - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
 
-        # ⬛ Fond noir pour le texte OCR
+        # Fond noir pour le texte OCR
         cv2.rectangle(image, (x, y + h), (x + w, y + h + 25), (0, 0, 0), -1)
         cv2.putText(image, license_text, (x, y + h + 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
@@ -163,7 +163,7 @@ def extract_text(image,bbox):
     
 
     else :
-        custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
+        custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
         text = pytesseract.image_to_string(roi, config=custom_config)
         text = text.strip()
 

@@ -48,7 +48,7 @@
 <div class="container py-5 text-center">
     <h2 class="text-danger mb-4">📡 Webcam en direct</h2>
 
-    <!-- ✅ Alerte informative -->
+    <!-- Alerte informative -->
     <div class="alert alert-warning text-center w-75 mx-auto">
         ⚠️ Les plaques détectées en direct ne seront pas enregistrées tant que vous n'avez pas cliqué sur
         <strong>"🎥 Capturer & enregistrer le live"</strong>.
@@ -57,7 +57,7 @@
     <!-- Flux MJPEG en direct -->
     <img src="{{ url_for('stream') }}" width="700" class="rounded shadow mb-4">
 
-    <!-- ✅ Bouton d'enregistrement -->
+    <!-- Bouton d'enregistrement -->
     <form action="/use_webcam" method="post" class="mb-4">
         <button id="capture-btn" class="btn btn-danger mt-2" disabled>🎥 Capturer & enregistrer le live</button>    </form>
 

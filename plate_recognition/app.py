@@ -12,7 +12,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 import csv
 from flask import Response
-import time 
+import time  
 app = Flask(__name__)
 
 app.secret_key = "supersecretkey"
@@ -41,7 +41,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# 🔹 Accueil
+# Accueil
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -64,7 +64,7 @@ def upload_image():
 
     result_img, texts = yolo_predictions(image, net)
 
-    # ✅ Nettoyage & récupération de la première plaque
+    #  Nettoyage & récupération de la première plaque
     from datetime import datetime
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
     cleaned_plate = None
@@ -73,22 +73,22 @@ def upload_image():
             cleaned_plate = plate.replace(" ", "").replace("-", "").upper()
             break
 
-    # ✅ Construction du nom de fichier
+    #  Construction du nom de fichier
     if cleaned_plate:
         image_filename = f"{cleaned_plate}_{now_str}.jpg"
     else:
         image_filename = f"image_{now_str}.jpg"
 
-    # ✅ Sauvegarde dans /static/exports
+    #  Sauvegarde dans /static/exports
     image_path = os.path.join(EXPORT_FOLDER, image_filename)
     cv2.imwrite(image_path, result_img)
 
-    # ✅ Enregistrement en base
+    #  Enregistrement en base
     for plate in texts:
         if plate and plate != 'no number':
             save_plate(plate, source='image', image_path=f"exports/{image_filename}")
 
-    # ✅ Sauvegarde pour affichage dans result.html
+    #  Sauvegarde pour affichage dans result.html
     cv2.imwrite(RESULT_IMG_PATH, result_img)
 
     return redirect(url_for('result', media_type='image', plates=",".join(texts)))
@@ -113,7 +113,7 @@ def upload_video():
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
 
-    # 🔧 Fichier brut .avi (temporaire)
+    # Fichier brut .avi (temporaire)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(RAW_VIDEO_PATH, fourcc, fps, (width, height))
 
@@ -129,11 +129,11 @@ def upload_video():
     cap.release()
     out.release()
 
-     # ✅ Nettoyer les textes pour nom de fichier
+     #  Nettoyer les textes pour nom de fichier
     cleaned_texts = [t.replace("-", "").replace(" ", "").upper() for t in texts if t and t != 'no number']
     main_plate = cleaned_texts[0] if cleaned_texts else None
 
-    # ✅ Nom du fichier vidéo final
+    #  Nom du fichier vidéo final
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
     if main_plate:
         video_name = f"{main_plate}_{now_str}.mp4"
@@ -200,7 +200,7 @@ def use_webcam():
     cap.release()
     out.release()
 
-    print("✅ Fichier temporaire écrit :", os.path.exists(RAW_VIDEO_PATH))
+    print(" Fichier temporaire écrit :", os.path.exists(RAW_VIDEO_PATH))
     if not os.path.exists(RAW_VIDEO_PATH):
         print("❌ Le fichier AVI n'a pas été généré.")
 
@@ -234,11 +234,11 @@ def use_webcam():
             print(f"💾 Sauvegarde DB pour : {plate} -> exports/{final_name}")
             save_plate(plate, source='webcam', image_path=f"exports/{final_name}")
 
-    # ✅ Affichage final sans fausses plaques
+    # Affichage final sans fausses plaques
     valid_texts = [t for t in texts if t and t.upper() not in ['NO NUMBER', 'NO TEXT']]
     return redirect(url_for('result', media_type='video', plates=",".join(valid_texts), video_name=final_name))
 
-# 🔹 Résultat
+# Résultat
 import time
 
 @app.route('/result')
@@ -338,7 +338,7 @@ def history():
     plates = cur.fetchall()
     conn.close()
 
-    # 🔢 Compter par source pour les graphiques
+    # Compter par source pour les graphiques
     from collections import Counter
     source_counts = Counter([p[2] for p in plates])
     from datetime import datetime
@@ -473,7 +473,7 @@ def delete_all():
     cur.execute("DELETE FROM plates")
     conn.commit()
     conn.close()
-    flash("✅ Toutes les plaques ont été supprimées.")
+    flash("Toutes les plaques ont été supprimées.")
     return redirect(url_for('admin'))
 
 ADMIN_PASSWORD = "admin"  
@@ -496,7 +496,7 @@ def logout():
     return redirect(url_for('index'))
 
 
-# 📝 Affiche le formulaire de modification
+# Affiche le formulaire de modification
 @app.route('/edit/<int:id>')
 def edit_plate(id):
     conn = get_connection()
@@ -507,7 +507,7 @@ def edit_plate(id):
 
     return render_template("edit_plate.html", plate=plate)
 
-# 💾 Enregistre la plaque modifiée
+# Enregistre la plaque modifiée
 @app.route('/update/<int:id>', methods=['POST'])
 def update_plate_route(id):
     from_page = request.args.get("from_page", "history")
@@ -523,7 +523,7 @@ def update_plate_route(id):
     conn.commit()
     conn.close()
 
-    flash(f"✅ Plaque modifiée : {new_plate}", "success")
+    flash(f"Plaque modifiée : {new_plate}", "success")
     return redirect(url_for(from_page))
 
 @app.route('/add_plate', methods=['GET', 'POST'])
@@ -539,7 +539,7 @@ def add_plate():
         conn.commit()
         conn.close()
 
-        flash("✅ Nouvelle plaque ajoutée avec succès.")
+        flash("Nouvelle plaque ajoutée avec succès.")
         return redirect(url_for('admin'))
 
     return render_template('add_plate.html')
@@ -551,22 +551,22 @@ def vehicle_detail(plate):
     from vehicle_info import get_vehicle_details  
     import os
 
-    # 🔎 Connexion à la base
+    # Connexion à la base
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM plates WHERE plate=? ORDER BY timestamp DESC", (plate,))
     rows = cur.fetchall()
     conn.close()
 
-    # 📸 Trouver une image liée
+    # Trouver une image liée
     image_path = None
     export_dir = os.path.join(app.static_folder, 'exports')
     for file in os.listdir(export_dir):
         if plate.replace(" ", "").replace("-", "").lower() in file.lower():
             image_path = 'exports/' + file
             break
-    print("🔍 Image trouvée pour la plaque :", image_path)
-    # ✅ Récupérer les infos de l'API simulée
+    print("Image trouvée pour la plaque :", image_path)
+    # Récupérer les infos de l'API simulée
     vehicle_info = get_vehicle_details(plate)
 
     return render_template("vehicle_info.html", plate=plate, vehicle_info=vehicle_info, image_path=image_path)
