@@ -229,3 +229,4 @@ exports/
 /static/exports/*
 /data_images/
 __pycache__/
+plate_recognition/uploads/
