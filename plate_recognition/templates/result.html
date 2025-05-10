@@ -55,9 +55,13 @@
    
 <div class="container py-5 text-center">
     <h2 class="text-success mb-4">✅ Résultat de la détection</h2>
+    <div class="alert alert-info">
+        🎉 Traitement terminé. Vous pouvez visualiser ou télécharger les résultats ci-dessous.
+    </div>
 
     {% if media_type == "image" %}
-    <img src="{{ url_for('static', filename='result.jpg') }}?t={{ time() }}" class="img-fluid">    {% elif media_type == "video" %}
+    <img src="{{ url_for('static', filename='result.jpg') }}" alt="Résultat" class="img-fluid" style="max-width: 50%; height: auto;">      
+      {% elif media_type == "video" %}
         <video class="rounded shadow" width="700" controls autoplay muted loop>
             <source src="{{ url_for('static', filename='exports/' + video_name) }}" type="video/mp4">
             Votre navigateur ne supporte pas la vidéo.
@@ -71,17 +75,29 @@
 
     <h3 class="mt-5">📋 Plaques détectées :</h3>
     {% if plates and plates[0] %}
-        <ul class="list-group mx-auto" style="max-width: 400px;">
-            {% for plate in plates %}
-                <li class="list-group-item">{{ plate }}</li>
-            {% endfor %}
-        </ul>
+    <ul class="list-group mx-auto" style="max-width: 400px;">
+        {% for plate in plates %}
+            <li class="list-group-item">
+                <a href="{{ url_for('vehicle_detail', plate=plate) }}" class="btn btn-outline-primary w-100">
+                    {{ plate }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
     {% else %}
         <p class="text-muted">😕 Aucune plaque détectée.</p>
     {% endif %}
 
     <div class="mt-4">
         <a href="/" class="btn btn-primary">⬅️ Retour à l'accueil</a>
+        
+        {% if media_type == "image" %}
+            <a href="{{ url_for('static', filename='exports/' + video_name) }}" class="btn btn-success mt-2" download>Télécharger l'image</a>
+        {% elif media_type == "video" %}
+            <a href="{{ url_for('static', filename='exports/' + video_name) }}" class="btn btn-success mt-2" download>Télécharger la vidéo</a>
+        {% endif %}
+    
+        <a href="/history" class="btn btn-outline-secondary mt-2">📋 Voir l'historique des détections</a>
     </div>
 </div>
 <script>

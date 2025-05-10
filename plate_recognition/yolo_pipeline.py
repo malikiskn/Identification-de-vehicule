@@ -19,6 +19,7 @@ INPUT_HEIGHT = 640
 from skimage import io
 import plotly.express as px
 
+
 '''
 cette fonction transforme l’image pour YOLO et récupère les prédictions brutes du modèle.
 '''
@@ -163,7 +164,7 @@ def extract_text(image,bbox):
     
 
     else :
-        custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
         text = pytesseract.image_to_string(roi, config=custom_config)
         text = text.strip()
 

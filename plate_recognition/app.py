@@ -27,6 +27,11 @@ os.makedirs(EXPORT_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+def load_model():
+    net = cv2.dnn.readNetFromONNX(os.path.join(os.path.dirname(__file__), '../runs/train/Model/weights/best.onnx'))
+    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+    return net
 
 def get_available_camera_index(max_index=5):
     for index in range(max_index):
@@ -58,10 +63,7 @@ def upload_image():
 
     image = cv2.imread(file_path)
 
-    net = cv2.dnn.readNetFromONNX('../runs/train/Model/weights/best.onnx')
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-
+    net = load_model()
     result_img, texts = yolo_predictions(image, net)
 
     #  Nettoyage & récupération de la première plaque
@@ -83,6 +85,10 @@ def upload_image():
     image_path = os.path.join(EXPORT_FOLDER, image_filename)
     cv2.imwrite(image_path, result_img)
 
+    # Suppression du fichier temporaire après traitement
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
     #  Enregistrement en base
     for plate in texts:
         if plate and plate != 'no number':
@@ -91,7 +97,7 @@ def upload_image():
     #  Sauvegarde pour affichage dans result.html
     cv2.imwrite(RESULT_IMG_PATH, result_img)
 
-    return redirect(url_for('result', media_type='image', plates=",".join(texts)))
+    return redirect(url_for('result', media_type='image', plates=",".join(texts), video_name=image_filename))
 
 # 🔹 Upload de vidéo
 @app.route('/upload_video', methods=['POST'])
@@ -104,15 +110,14 @@ def upload_video():
     input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
 
+
     cap = cv2.VideoCapture(input_path)
-    net = cv2.dnn.readNetFromONNX('../runs/train/Model/weights/best.onnx')
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+    
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
-
+    net = load_model()
     # Fichier brut .avi (temporaire)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(RAW_VIDEO_PATH, fourcc, fps, (width, height))
@@ -152,6 +157,11 @@ def upload_video():
         if plate and plate != 'no number':
             save_plate(plate, source='video', image_path=f"exports/{video_name}")
 
+     # Nettoyer le fichier uploadé après l'avoir ouvert avec OpenCV
+    if os.path.exists(input_path):
+        os.remove(input_path)
+
+    #  Enregistrement de la vidéo finale
     return redirect(url_for('result', media_type='video', plates=",".join(texts), video_name=video_name))
 
 
@@ -160,9 +170,7 @@ def use_webcam():
     from datetime import datetime
 
     cap = cv2.VideoCapture(0)
-    net = cv2.dnn.readNetFromONNX('../runs/train/Model/weights/best.onnx')
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+    net = load_model()
 
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
@@ -273,10 +281,7 @@ def generate_frames():
         return
 
     cap = cv2.VideoCapture(camera_index)
-    net = cv2.dnn.readNetFromONNX('../runs/train/Model/weights/best.onnx')
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-
+    net = load_model()
     global live_plates
     live_plates = []
 
@@ -603,6 +608,19 @@ def add_header(r):
     r.headers["Expires"] = "0"
     return r
 
+import os
+
+@app.route('/clear_uploads')
+def clear_uploads():
+    folder = app.config['UPLOAD_FOLDER']
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(f'Erreur lors de la suppression de {file_path}: {e}')
+    return "Uploads vidés avec succès."
     
 from database import init_db
 init_db()

@@ -8,3 +8,5 @@ INPUT_HEIGHT = 640
 CONFIDENCE_THRESHOLD = 0.5     # seuil minimum pour considérer une détection
 CLASS_SCORE_THRESHOLD = 0.2    # seuil de probabilité pour la classe "license_plate"
 NMS_THRESHOLD = 0.4            # suppression des doublons
+# Chemin du modèle YOLOv5
+MODEL_PATH = 'runs/train/Model/weights/best.onnx'
