@@ -97,7 +97,7 @@ def non_maximum_supression(input_image, detections):
 # Elle utilise les résultats de YOLO (boxes, confiances) + Tesseract (OCR).
 def drawings(image, boxes_np, confidences_np, index):
     for ind in index:
-        PAD = 5  # Réduction du cadre affiché
+        PAD = 5
         x, y, w, h = boxes_np[ind]
         x = max(0, x + PAD)
         y = max(0, y + PAD)
@@ -124,24 +124,8 @@ def drawings(image, boxes_np, confidences_np, index):
 
 def preprocess_for_ocr(roi):
     # Simple mise en niveaux de gris, sans binarisation agressive
-    return cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-
-
-    # Essayer avec PSM 6 pour les cas problématiques
-    config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
-    text = pytesseract.image_to_string(binary, config=config).strip().upper()
-
-    # Nettoyer les débuts invalides
-    text = re.sub(r'^[-\d]+|[-]+$', '', text)
-
-    # Supprimer les espaces internes
-    text = text.replace(' ', '')
-
-    # Validation souple : 5 à 12 caractères
-    if 5 <= len(text) <= 12 and re.fullmatch(r'[A-Z0-9\-]+', text):
-        return text
-    return ''
-
+    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    return gray
 
 
 # Fonction principale de prédiction. Elle applique les 3 étapes :
@@ -171,7 +155,7 @@ def yolo_predictions(img, net):
     detected_texts = []
 
     for ind in indexes:
-        PAD = 5  # Réduction des bords
+        PAD = 5
         x, y, w, h = boxes[ind]
         x = max(0, x + PAD)
         y = max(0, y + PAD)
@@ -185,14 +169,14 @@ def yolo_predictions(img, net):
 
         preprocessed_crop = preprocess_for_ocr(roi)
         text = extract_text_from_image(preprocessed_crop).strip().upper()
+
+        # Nettoyage : Retirer uniquement les tirets/digits en début/fin
         text = re.sub(r'^[-\d]+|[-]+$', '', text)
 
-        if len(text) >= 4:
-            detected_texts.append(text)
-        else:
-            detected_texts.append('Aucune lecture OCR')
+        # Pas de validation stricte, on prend le texte tel quel s'il existe
+        detected_texts.append(text if text else 'Aucune lecture OCR')
 
-    # Dédupliquer les résultats
+    # Dédupliquer
     unique_texts = list(set(detected_texts))
     filtered_texts = []
     for text in unique_texts:
@@ -207,17 +191,13 @@ def yolo_predictions(img, net):
 # Cette fonction utilise Tesseract OCR pour lire le texte contenu dans une boîte (bbox).
 # Elle extrait la région de l’image correspondant à la plaque,
 # vérifie qu’elle est valide, puis retourne le texte lu (ou 'no number' si vide).
-def extract_text(image,bbox):
-    x,y,w,h = bbox
+def extract_text(image, bbox):
+    x, y, w, h = bbox
     roi = image[y:y+h, x:x+w]
 
     if 0 in roi.shape:
         return 'no number'
-    
 
-    else :
-        custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
-        text = pytesseract.image_to_string(roi, config=custom_config)
-        text = text.strip()
-
-        return text
+    custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
+    text = pytesseract.image_to_string(roi, config=custom_config)
+    return text.strip()
