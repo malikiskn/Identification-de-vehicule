@@ -121,15 +121,21 @@ def upload_video():
     # Fichier brut .avi (temporaire)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(RAW_VIDEO_PATH, fourcc, fps, (width, height))
-
-    texts = []
+    
+    texts_set = set()
     while True:
         ret, frame = cap.read()
         if not ret:
             break
         result_img, new_texts = yolo_predictions(frame, net)
         out.write(result_img)
-        texts.extend(new_texts)
+
+        # Ajout uniquement des nouvelles plaques non encore vues
+        for t in new_texts:
+            if t not in texts_set:
+                texts_set.add(t)
+
+    texts = list(texts_set)
 
     cap.release()
     out.release()

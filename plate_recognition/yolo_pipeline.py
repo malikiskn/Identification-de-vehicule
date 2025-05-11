@@ -3,7 +3,8 @@ import numpy as np
 import pytesseract
 import platform
 import pytesseract
-
+import re
+import difflib
 # Spécifie le chemin de Tesseract selon le système d'exploitation
 if platform.system() == 'Darwin':  # macOS
     pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
@@ -19,31 +20,26 @@ INPUT_HEIGHT = 640
 from skimage import io
 import plotly.express as px
 
-
 '''
 cette fonction transforme l’image pour YOLO et récupère les prédictions brutes du modèle.
 '''
 def get_detections(img, net):
-    #1. Prétraitement de l'image (augmentation du contraste)
+    # Prétraitement de l'image (amélioration du contraste)
     image = img.copy()
-    # Convertit en niveaux de gris
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
-    # Améliore le contraste                       
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = cv2.equalizeHist(image)
-    # Revenir en BGR pour compatibilité modèle                                       
-    image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)                        
+    image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-    # 2. Adapter l'image au format carré YOLO
-    row, col, d = image.shape
+    # Adapter l'image au format carré YOLO
+    row, col, _ = image.shape
     max_rc = max(row, col)
     input_image = np.zeros((max_rc, max_rc, 3), dtype=np.uint8)
     input_image[0:row, 0:col] = image
 
-    # 3. Préparer l'image pour le modèle
+    # Préparer l'image pour le modèle
     blob = cv2.dnn.blobFromImage(input_image, 1/255, (INPUT_WIDTH, INPUT_HEIGHT), swapRB=True, crop=False)
     net.setInput(blob)
 
-    # 4. Obtenir les prédictions
     preds = net.forward()
     detections = preds[0]
 
@@ -101,31 +97,52 @@ def non_maximum_supression(input_image, detections):
 # Elle utilise les résultats de YOLO (boxes, confiances) + Tesseract (OCR).
 def drawings(image, boxes_np, confidences_np, index):
     for ind in index:
+        PAD = 5  # Réduction du cadre affiché
         x, y, w, h = boxes_np[ind]
+        x = max(0, x + PAD)
+        y = max(0, y + PAD)
+        w = max(0, w - 2 * PAD)
+        h = max(0, h - 2 * PAD)
+
         bb_conf = confidences_np[ind]
         conf_text = 'plate: {:.0f}%'.format(bb_conf * 100)
 
-        # Lire le texte OCR depuis la plaque
-        license_text = extract_text(image, boxes_np[ind])
+        license_text = extract_text(image, [x, y, w, h]).strip().upper()
+        license_text = re.sub(r'^[-\d]+|[-]+$', '', license_text)
 
-        # Sécurité : si rien lu, afficher "NO TEXT"
-        if license_text == '':
-            license_text = 'NO TEXT'
+        if not license_text:
+            license_text = 'Aucune lecture OCR'
 
-        # Boîte principale (rose)
         cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 255), 2)
-
-        # Fond rose pour la confiance
         cv2.rectangle(image, (x, y - 30), (x + w, y), (255, 0, 255), -1)
-        cv2.putText(image, conf_text, (x, y - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
-
-        # Fond noir pour le texte OCR
+        cv2.putText(image, conf_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
         cv2.rectangle(image, (x, y + h), (x + w, y + h + 25), (0, 0, 0), -1)
-        cv2.putText(image, license_text, (x, y + h + 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
+        cv2.putText(image, license_text, (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
 
     return image
+
+
+def preprocess_for_ocr(roi):
+    # Simple mise en niveaux de gris, sans binarisation agressive
+    return cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
+
+    # Essayer avec PSM 6 pour les cas problématiques
+    config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
+    text = pytesseract.image_to_string(binary, config=config).strip().upper()
+
+    # Nettoyer les débuts invalides
+    text = re.sub(r'^[-\d]+|[-]+$', '', text)
+
+    # Supprimer les espaces internes
+    text = text.replace(' ', '')
+
+    # Validation souple : 5 à 12 caractères
+    if 5 <= len(text) <= 12 and re.fullmatch(r'[A-Z0-9\-]+', text):
+        return text
+    return ''
+
+
 
 # Fonction principale de prédiction. Elle applique les 3 étapes :
 # - Détection avec YOLOv5
@@ -135,21 +152,56 @@ def drawings(image, boxes_np, confidences_np, index):
 # Elle utilise les fonctions get_detections, non_maximum_supression et drawings.
 
 
+def clean_plate_text(text):
+    # Retirer uniquement les tirets ou espaces en début/fin
+    return text.strip("- ")
+
+def extract_text_from_image(image_crop):
+    # Ne pas re-transformer en niveaux de gris
+    binary_crop = image_crop
+    config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
+    return pytesseract.image_to_string(binary_crop, config=config).strip()
+
+
 def yolo_predictions(img, net):
     input_image, detections = get_detections(img, net)
-    boxes_np, confidences_np, index = non_maximum_supression(input_image, detections)
+    boxes, confidences, indexes = non_maximum_supression(input_image, detections)
 
     result_img = img.copy()
-    texts = []
+    detected_texts = []
 
-    for ind in index:
-        text = extract_text(result_img, boxes_np[ind])
-        if text.strip():  
-            texts.append(text)
+    for ind in indexes:
+        PAD = 5  # Réduction des bords
+        x, y, w, h = boxes[ind]
+        x = max(0, x + PAD)
+        y = max(0, y + PAD)
+        w = max(0, w - 2 * PAD)
+        h = max(0, h - 2 * PAD)
 
-    result_img = drawings(result_img, boxes_np, confidences_np, index)
+        roi = result_img[y:y+h, x:x+w]
 
-    return result_img, texts  
+        if 0 in roi.shape:
+            continue
+
+        preprocessed_crop = preprocess_for_ocr(roi)
+        text = extract_text_from_image(preprocessed_crop).strip().upper()
+        text = re.sub(r'^[-\d]+|[-]+$', '', text)
+
+        if len(text) >= 4:
+            detected_texts.append(text)
+        else:
+            detected_texts.append('Aucune lecture OCR')
+
+    # Dédupliquer les résultats
+    unique_texts = list(set(detected_texts))
+    filtered_texts = []
+    for text in unique_texts:
+        if not difflib.get_close_matches(text, filtered_texts, n=1, cutoff=0.85):
+            filtered_texts.append(text)
+
+    result_img = drawings(result_img, boxes, confidences, indexes)
+
+    return result_img, filtered_texts
 
 
 # Cette fonction utilise Tesseract OCR pour lire le texte contenu dans une boîte (bbox).
