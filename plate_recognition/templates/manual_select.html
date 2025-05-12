@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Encadrer la plaque</title>
+    <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet"/>
+    <style>
+        #preview { max-width: 100%; }
+        #image {
+            max-width: 90%;
+            height: auto;
+            border: 2px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2>Encadrez la plaque puis validez</h2>
+    <p>Cliquez et ajustez le cadre sur la plaque avant de valider.</p>
+
+    <div>
+        {% if 'exports/' in image_path %}
+            <img id="image" src="{{ url_for('static', filename=image_path) }}" alt="Image à encadrer">
+        {% endif %}
+    </div>
+
+    <form id="selectionForm" action="/submit_selection" method="POST">
+        <input type="hidden" name="x" id="x">
+        <input type="hidden" name="y" id="y">
+        <input type="hidden" name="width" id="width">
+        <input type="hidden" name="height" id="height">
+        <input type="hidden" name="image_path" value="{{ image_path }}">
+        <button type="submit" onclick="return validateSelection()">Valider ma sélection</button>
+    </form>
+
+    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+    <script>
+        function validateSelection() {
+            if (!document.getElementById('width').value || !document.getElementById('height').value) {
+                alert("Veuillez ajuster la sélection avant de valider.");
+                return false;
+            }
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const image = document.getElementById('image');
+
+            if (!image) {
+                console.warn('Aucune image à encadrer n\'a été fournie.');
+                return;
+            }
+
+            image.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+            });
+
+            const cropper = new Cropper(image, {
+                viewMode: 1,
+                autoCropArea: 0.8,
+                dragMode: 'crop',
+                guides: true,
+                highlight: true,
+                background: true,
+                movable: true,
+                zoomable: true,
+                scalable: true,
+                ready() {
+                    cropper.setDragMode('crop');
+                },
+                crop(event) {
+                    document.getElementById('x').value = Math.round(event.detail.x);
+                    document.getElementById('y').value = Math.round(event.detail.y);
+                    document.getElementById('width').value = Math.round(event.detail.width);
+                    document.getElementById('height').value = Math.round(event.detail.height);
+                }
+            });
+
+            console.log('Cropper initialisé');
+        });
+    </script>
+</body>
+</html>

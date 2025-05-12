@@ -84,6 +84,14 @@
             </li>
         {% endfor %}
     </ul>
+    {% if "Aucune lecture OCR" in plates or not plates %}
+    <form action="/manual_select" method="POST" class="mt-3">
+        <input type="hidden" name="image_path" value="exports/result.jpg">
+        <button type="submit" class="btn btn-warning w-100">
+            Encadrer manuellement la plaque
+        </button>
+    </form>
+{% endif %}
     {% else %}
         <p class="text-muted">😕 Aucune plaque détectée.</p>
     {% endif %}

@@ -66,7 +66,6 @@ def upload_image():
     net = load_model()
     result_img, texts = yolo_predictions(image, net)
 
-    #  Nettoyage & récupération de la première plaque
     from datetime import datetime
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
     cleaned_plate = None
@@ -75,27 +74,27 @@ def upload_image():
             cleaned_plate = plate.replace(" ", "").replace("-", "").upper()
             break
 
-    #  Construction du nom de fichier
     if cleaned_plate:
         image_filename = f"{cleaned_plate}_{now_str}.jpg"
     else:
         image_filename = f"image_{now_str}.jpg"
 
-    #  Sauvegarde dans /static/exports
     image_path = os.path.join(EXPORT_FOLDER, image_filename)
     cv2.imwrite(image_path, result_img)
 
-    # Suppression du fichier temporaire après traitement
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    #  Enregistrement en base
     for plate in texts:
         if plate and plate != 'no number':
             save_plate(plate, source='image', image_path=f"exports/{image_filename}")
 
-    #  Sauvegarde pour affichage dans result.html
+    # Sauvegarde pour affichage dans result.html
     cv2.imwrite(RESULT_IMG_PATH, result_img)
+
+    # ✅ Copie aussi dans static/exports/result.jpg pour encadrement manuel
+    import shutil
+    shutil.copy(RESULT_IMG_PATH, os.path.join(EXPORT_FOLDER, 'result.jpg'))
 
     return redirect(url_for('result', media_type='image', plates=",".join(texts), video_name=image_filename))
 
@@ -627,7 +626,50 @@ def clear_uploads():
         except Exception as e:
             print(f'Erreur lors de la suppression de {file_path}: {e}')
     return "Uploads vidés avec succès."
-    
+
+@app.route('/manual_select', methods=['POST'])
+def manual_select():
+    image_path = request.form['image_path']
+
+    # Nettoyage pour éviter les doublons 'exports/exports/'
+    image_path = image_path.replace('exports/exports/', 'exports/')
+    if not image_path.startswith('exports/'):
+        image_path = 'exports/' + image_path
+
+    print("Chemin image reçu :", image_path)
+    return render_template('manual_select.html', image_path=image_path)
+
+
+@app.route('/submit_selection', methods=['POST'])
+def submit_selection():
+    x = int(request.form['x'])
+    y = int(request.form['y'])
+    width = int(request.form['width'])
+    height = int(request.form['height'])
+    image_path = request.form['image_path']
+
+    print("Chemin image reçu :", image_path)
+
+    # Charger l’image depuis le dossier static
+    img = cv2.imread(os.path.join('static', image_path))
+    if img is None:
+        print("Erreur : image introuvable")
+        return "Erreur : image introuvable", 400
+
+    # Découper selon la sélection
+    cropped_img = img[y:y+height, x:x+width]
+
+    # Relancer l’OCR sur la zone sélectionnée
+    raw_text, cleaned_text = extract_text(cropped_img, pad=0)
+    print(f'OCR brut: {raw_text}, Nettoyé: {cleaned_text}')
+
+    # Retourner vers la même page résultat avec la nouvelle lecture
+    return render_template('result.html',
+                           image_path=image_path,
+                           plates=[cleaned_text if cleaned_text else 'Aucune lecture OCR'],
+                           media_type='image',
+                           video_name=os.path.basename(image_path))
+
 from database import init_db
 init_db()
 
