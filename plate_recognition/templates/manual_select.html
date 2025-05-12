@@ -16,9 +16,12 @@
         }
         #selection-box {
             position: absolute;
-            border: 2px dashed red;
+            border: 2px solid rgba(255, 0, 0, 0.8); 
+            background: rgba(255, 0, 0, 0.1); /* Fond légèrement coloré */
             display: none;
             pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); /* Ombre pour mieux voir */
+            z-index: 1000; /* Au-dessus de tout */
         }
         .debug-dot {
             position: absolute;
@@ -27,6 +30,13 @@
             background-color: red;
             border-radius: 50%;
             transform: translate(-50%, -50%);
+        }
+        button[type="submit"] {
+            transition: all 0.3s;
+        }
+        button[type="submit"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -58,74 +68,69 @@
             <button type="button" id="debugBtn" class="btn btn-outline-secondary">
                 <i class="bi bi-bug"></i> Mode Debug
             </button>
+            
         </div>
     </form>
 
-    <script>
-        // Variables d'état
-        let isDragging = false;
-        let startX, startY;
-        const box = document.getElementById('selection-box');
-        const img = document.getElementById('target-image');
-        let debugMode = false;
+<script>
+let isDragging = false;
+let startX, startY;
+const box = document.getElementById('selection-box');
+const img = document.getElementById('target-image');
+const form = document.querySelector('form');
+let debugMode = false;
 
-        // Activation du debug
-        document.getElementById('debugBtn').addEventListener('click', function() {
-            debugMode = !debugMode;
-            this.classList.toggle('btn-warning');
-            alert(`Mode debug ${debugMode ? 'activé' : 'désactivé'}\nVérifiez la console (F12)`);
-        });
+// Désactiver le drag-and-drop naturel de l'image
+img.addEventListener('dragstart', (e) => e.preventDefault());
 
-        // Gestion de la sélection
-        img.addEventListener('mousedown', (e) => {
-            const rect = img.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
-            
-            box.style.left = startX + 'px';
-            box.style.top = startY + 'px';
-            box.style.width = '0px';
-            box.style.height = '0px';
-            box.style.display = 'block';
-            isDragging = true;
+// Début de sélection
+img.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    isDragging = true;
+    startX = e.clientX - img.getBoundingClientRect().left;
+    startY = e.clientY - img.getBoundingClientRect().top;
+    
+    box.style.left = startX + 'px';
+    box.style.top = startY + 'px';
+    box.style.width = '0px';
+    box.style.height = '0px';
+    box.style.display = 'block';
+});
 
-            if (debugMode) {
-                console.log(`Début sélection: X=${Math.round(startX)}, Y=${Math.round(startY)}`);
-                addDebugDot(startX, startY, 'green');
-            }
-        });
+// Pendant le drag
+document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    
+    const currentX = e.clientX - img.getBoundingClientRect().left;
+    const currentY = e.clientY - img.getBoundingClientRect().top;
+    
+    box.style.width = (currentX - startX) + 'px';
+    box.style.height = (currentY - startY) + 'px';
+});
 
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            
-            const rect = img.getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
-            
-            box.style.width = (currentX - startX) + 'px';
-            box.style.height = (currentY - startY) + 'px';
-        });
+document.addEventListener('mouseup', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    // Mise à jour des champs cachés
+    const width = Math.abs(parseInt(box.style.width));
+    const height = Math.abs(parseInt(box.style.height));
+    
+    document.getElementById('x').value = Math.round(startX);
+    document.getElementById('y').value = Math.round(startY);
+    document.getElementById('width').value = width;
+    document.getElementById('height').value = height;
+    
+    // Garde le cadre vert jusqu'à validation
+    box.style.border = '2px solid #00ff00';
+    box.style.display = 'block';
 
-        window.addEventListener('mouseup', () => {
-            if (!isDragging) return;
-            
-            const endX = startX + parseInt(box.style.width);
-            const endY = startY + parseInt(box.style.height);
-            
-            document.getElementById('x').value = Math.round(startX);
-            document.getElementById('y').value = Math.round(startY);
-            document.getElementById('width').value = Math.abs(Math.round(parseInt(box.style.width)));
-            document.getElementById('height').value = Math.abs(Math.round(parseInt(box.style.height)));
-            
-            if (debugMode) {
-                console.log(`Fin sélection: Largeur=${box.style.width}, Hauteur=${box.style.height}`);
-                console.log(`Coordonnées envoyées: X=${startX}, Y=${startY}, W=${box.style.width}, H=${box.style.height}`);
-                addDebugDot(endX, endY, 'blue');
-            }
-            
-            isDragging = false;
-        });
+    // Active le bouton Valider
+    document.querySelector('button[type="submit"]').disabled = false;
+});
 
+// Empêche la disparition au clic
+box.addEventListener('click', (e) => e.stopPropagation());
         // Fonctions debug
         function addDebugDot(x, y, color) {
             const dot = document.createElement('div');
@@ -158,6 +163,7 @@
     .then(response => window.location.href = "/result")
     .catch(err => console.error("Erreur:", err));
 });
+
         
     </script>
 </body>
