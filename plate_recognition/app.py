@@ -13,6 +13,9 @@ from reportlab.lib.pagesizes import A4
 import csv
 from flask import Response
 import time  
+from yolo_pipeline import extract_text
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 
 app.secret_key = "supersecretkey"
@@ -23,7 +26,10 @@ RAW_VIDEO_PATH = os.path.join(STATIC_FOLDER, 'raw_video.avi')  # temporaire
 RESULT_VIDEO_PATH = os.path.join(STATIC_FOLDER, 'result_video.mp4')  # final
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'mp4', 'avi', 'mov', 'MP4'}
 EXPORT_FOLDER = os.path.join(STATIC_FOLDER, 'exports')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(EXPORT_FOLDER, exist_ok=True)
+
+
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -630,45 +636,61 @@ def clear_uploads():
 @app.route('/manual_select', methods=['POST'])
 def manual_select():
     image_path = request.form['image_path']
-
-    # Nettoyage pour éviter les doublons 'exports/exports/'
-    image_path = image_path.replace('exports/exports/', 'exports/')
-    if not image_path.startswith('exports/'):
-        image_path = 'exports/' + image_path
-
-    print("Chemin image reçu :", image_path)
+    # Nettoyage du chemin pour éviter les doublons 'exports/'
+    if image_path.startswith('exports/'):
+        image_path = image_path.replace('exports/', '')
     return render_template('manual_select.html', image_path=image_path)
 
 
 @app.route('/submit_selection', methods=['POST'])
 def submit_selection():
-    x = int(request.form['x'])
-    y = int(request.form['y'])
-    width = int(request.form['width'])
-    height = int(request.form['height'])
-    image_path = request.form['image_path']
+    try:
+        x = round(float(request.form.get('x', 0)))
+        y = round(float(request.form.get('y', 0)))
+        width = round(float(request.form.get('width', 0)))
+        height = round(float(request.form.get('height', 0)))
+        image_path = request.form['image_path']
+    except Exception as e:
+        flash(f"❌ Erreur : {str(e)}", "danger")
+        return redirect(url_for('index'))
 
-    print("Chemin image reçu :", image_path)
-
-    # Charger l’image depuis le dossier static
-    img = cv2.imread(os.path.join('static', image_path))
+    full_path = os.path.join('static', 'exports', image_path)
+    img = cv2.imread(full_path)
+    
     if img is None:
-        print("Erreur : image introuvable")
-        return "Erreur : image introuvable", 400
+        flash("❌ Image non trouvée", "danger")
+        return redirect(url_for('index'))
 
-    # Découper selon la sélection
-    cropped_img = img[y:y+height, x:x+width]
+    roi = img[y:y+height, x:x+width]
+    _, cleaned_text = extract_text(roi, bbox=None, pad=0)
 
-    # Relancer l’OCR sur la zone sélectionnée
-    raw_text, cleaned_text = extract_text(cropped_img, pad=0)
-    print(f'OCR brut: {raw_text}, Nettoyé: {cleaned_text}')
+    if cleaned_text and cleaned_text.upper() not in ['NO NUMBER', 'NO TEXT']:
+        save_plate(cleaned_text, source='manual', image_path=f"exports/{image_path}")
 
-    # Retourner vers la même page résultat avec la nouvelle lecture
-    return render_template('result.html',
-                           image_path=image_path,
-                           plates=[cleaned_text if cleaned_text else 'Aucune lecture OCR'],
-                           media_type='image',
-                           video_name=os.path.basename(image_path))
+    return redirect(url_for('result', 
+                         media_type='image',
+                         plates=[cleaned_text] if cleaned_text else ['Aucune lecture OCR'],
+                         video_name=image_path))
+
+
+
+@app.route('/retry_ocr/<path:image_path>')
+def retry_ocr(image_path):
+    img = cv2.imread(os.path.join('static', 'exports', image_path))
+    if img is None:
+        flash("❌ Image non trouvée", "danger")
+        return redirect(url_for('history'))
+    
+    _, cleaned_text = extract_text(img, bbox=None, pad=10)
+    
+    if cleaned_text and cleaned_text.upper() not in ['NO NUMBER', 'NO TEXT']:
+        save_plate(cleaned_text, source='retry', image_path=f"exports/{image_path}")
+
+    return redirect(url_for('result', 
+                         media_type='image',
+                         plates=[cleaned_text] if cleaned_text else ['Aucune lecture OCR'],
+                         video_name=image_path))
+
 
 from database import init_db
 init_db()

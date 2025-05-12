@@ -1,81 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Encadrer la plaque</title>
-    <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet"/>
+    <title>Sélection manuelle</title>
     <style>
-        #preview { max-width: 100%; }
-        #image {
-            max-width: 90%;
-            height: auto;
-            border: 2px solid #ddd;
+        #image-container { position: relative; display: inline-block; }
+        #selection-box {
+            position: absolute;
+            border: 2px dashed red;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h2>Encadrez la plaque puis validez</h2>
-    <p>Cliquez et ajustez le cadre sur la plaque avant de valider.</p>
-
-    <div>
-        {% if 'exports/' in image_path %}
-            <img id="image" src="{{ url_for('static', filename=image_path) }}" alt="Image à encadrer">
-        {% endif %}
+    <h2>Encadrez la plaque avec votre souris</h2>
+    
+    <div id="image-container">
+        <img id="target-image" src="{{ url_for('static', filename='exports/' + image_path) }}" style="max-width: 80%;">
+        <div id="selection-box"></div>
     </div>
 
-    <form id="selectionForm" action="/submit_selection" method="POST">
+    <form action="/submit_selection" method="POST">
         <input type="hidden" name="x" id="x">
         <input type="hidden" name="y" id="y">
         <input type="hidden" name="width" id="width">
         <input type="hidden" name="height" id="height">
         <input type="hidden" name="image_path" value="{{ image_path }}">
-        <button type="submit" onclick="return validateSelection()">Valider ma sélection</button>
+        <button type="submit" class="btn btn-primary">Valider la sélection</button>
     </form>
 
-    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
     <script>
-        function validateSelection() {
-            if (!document.getElementById('width').value || !document.getElementById('height').value) {
-                alert("Veuillez ajuster la sélection avant de valider.");
-                return false;
-            }
-            return true;
-        }
+        let startX, startY;
+        const box = document.getElementById('selection-box');
+        const img = document.getElementById('target-image');
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const image = document.getElementById('image');
+        img.addEventListener('mousedown', (e) => {
+            const rect = img.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            box.style.left = startX + 'px';
+            box.style.top = startY + 'px';
+            box.style.width = '0px';
+            box.style.height = '0px';
+            box.style.display = 'block';
+        });
 
-            if (!image) {
-                console.warn('Aucune image à encadrer n\'a été fournie.');
-                return;
-            }
+        window.addEventListener('mousemove', (e) => {
+            if (!startX) return;
+            
+            const rect = img.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            box.style.width = (currentX - startX) + 'px';
+            box.style.height = (currentY - startY) + 'px';
+        });
 
-            image.addEventListener('dragstart', function(e) {
-                e.preventDefault();
-            });
-
-            const cropper = new Cropper(image, {
-                viewMode: 1,
-                autoCropArea: 0.8,
-                dragMode: 'crop',
-                guides: true,
-                highlight: true,
-                background: true,
-                movable: true,
-                zoomable: true,
-                scalable: true,
-                ready() {
-                    cropper.setDragMode('crop');
-                },
-                crop(event) {
-                    document.getElementById('x').value = Math.round(event.detail.x);
-                    document.getElementById('y').value = Math.round(event.detail.y);
-                    document.getElementById('width').value = Math.round(event.detail.width);
-                    document.getElementById('height').value = Math.round(event.detail.height);
-                }
-            });
-
-            console.log('Cropper initialisé');
+        window.addEventListener('mouseup', () => {
+            if (!startX) return;
+            
+            document.getElementById('x').value = startX;
+            document.getElementById('y').value = startY;
+            document.getElementById('width').value = parseInt(box.style.width);
+            document.getElementById('height').value = parseInt(box.style.height);
+            
+            startX = null;
         });
     </script>
 </body>

@@ -152,8 +152,12 @@ def yolo_predictions(img, net):
 # Cette fonction utilise Tesseract OCR pour lire le texte contenu dans une boîte (bbox).
 # Elle extrait la région de l’image correspondant à la plaque,
 # vérifie qu’elle est valide, puis retourne le texte lu (ou 'no number' si vide).
-def extract_text(image, bbox, pad=2):
-    x, y, w, h = bbox
+def extract_text(image, bbox=None, pad=2):
+    if bbox is None:
+        # Si pas de bbox, on traite toute l'image
+        x, y, w, h = 0, 0, image.shape[1], image.shape[0]
+    else:
+        x, y, w, h = bbox    
     x = max(0, x + pad)
     y = max(0, y + pad)
     w = max(0, w - 2 * pad)

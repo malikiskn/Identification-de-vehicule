@@ -84,13 +84,15 @@
             </li>
         {% endfor %}
     </ul>
-    {% if "Aucune lecture OCR" in plates or not plates %}
-    <form action="/manual_select" method="POST" class="mt-3">
-        <input type="hidden" name="image_path" value="exports/result.jpg">
-        <button type="submit" class="btn btn-warning w-100">
-            Encadrer manuellement la plaque
-        </button>
-    </form>
+    {% if "Aucune lecture OCR" in plates %}
+    <div class="mt-3">
+        <form action="/manual_select" method="POST" style="display:inline;">
+            <input type="hidden" name="image_path" value="{{ 'result.jpg' if media_type == 'image' else video_name }}">
+            <button type="submit" class="btn btn-warning">✏️ Corriger manuellement</button>
+        </form>
+        <a href="{{ url_for('retry_ocr', image_path=('result.jpg' if media_type == 'image' else video_name)) }}" 
+           class="btn btn-info">🔄 Réessayer l'OCR automatique</a>
+    </div>
 {% endif %}
     {% else %}
         <p class="text-muted">😕 Aucune plaque détectée.</p>
