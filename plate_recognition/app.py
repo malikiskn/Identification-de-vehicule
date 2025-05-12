@@ -754,44 +754,36 @@ def reprocess_image():
 @app.route('/enhance_image', methods=['POST'])
 def enhance_image():
     try:
-        image_path = request.form['image_path']
+        image_path = request.form['image_path']  # Doit être présent dans le formulaire
         full_path = os.path.join('static', 'exports', image_path)
         
-        # Lire l'image
-        img = cv2.imread(full_path)
-        if img is None:
-            flash("❌ Image non trouvée", "danger")
+        if not os.path.exists(full_path):
+            flash("Image introuvable", "danger")
             return redirect(url_for('history'))
 
-        # Appliquer les améliorations
-        # --- Contraste adaptatif ---
+        # Charger et traiter l'image
+        img = cv2.imread(full_path)
         lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
         l_enhanced = clahe.apply(l)
         enhanced = cv2.merge((l_enhanced, a, b))
         enhanced = cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
-        
-        # --- Réduction du bruit ---
         enhanced = cv2.fastNlMeansDenoisingColored(enhanced, None, 10, 10, 7, 21)
-        
-        # Sauvegarder le résultat
+
+        # Sauvegarder
         enhanced_path = os.path.join('static', 'exports', f"enhanced_{image_path}")
         cv2.imwrite(enhanced_path, enhanced)
         
-        # Mettre à jour l'image résultat
-        cv2.imwrite(RESULT_IMG_PATH, enhanced)
-        shutil.copy(RESULT_IMG_PATH, os.path.join('static', 'exports', 'result.jpg'))
-
         return redirect(url_for('result', 
                             media_type='image',
-                            plates=["Qualité améliorée - Relancer la détection"],
+                            plates=["Qualité améliorée"],
                             video_name=f"enhanced_{image_path}"))
+
     except Exception as e:
-        print(f"Erreur enhancement: {str(e)}")
-        flash("❌ Erreur lors de l'amélioration", "danger")
-        return redirect(url_for('index'))
-    
+        flash(f"Erreur lors de l'amélioration : {str(e)}", "danger")
+        return redirect(url_for('history'))
+            
 from database import init_db
 init_db()
 

@@ -268,5 +268,8 @@
   },
   "I0082": {
     "erreur": "Plaque immatriculation inconnue !"
+  },
+  "QUALITÉAMÉLIORÉE": {
+    "erreur": "Plaque immatriculation inconnue !"
   }
 }
