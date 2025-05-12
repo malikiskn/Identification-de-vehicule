@@ -1,0 +1,272 @@
+{
+  "AA-123-BA": {
+    "erreur": "",
+    "immat": "AA123BA",
+    "pays": "FR",
+    "marque": "PEUGEOT",
+    "modele": "207",
+    "version": "1.6 HDi",
+    "debut_modele": "2006-02",
+    "fin_modele": "2013-10",
+    "date1erCir_us": "2009-04-17",
+    "date1erCir_fr": "17-04-2009",
+    "co2": "115",
+    "energie": "2",
+    "energieNGC": "Diesel",
+    "genreVCG": "2",
+    "genreVCGNGC": "CTTE",
+    "puisFisc": "6",
+    "carrosserieCG": "DERIV VP",
+    "code_carrosserie": "25",
+    "carrosserie": "Berline bicorps trois ou cinq portes",
+    "code_type_transmission": "1",
+    "type_transmission": "Traction avant",
+    "capacite_litres": "1.6",
+    "code_systeme_alimentation": "11",
+    "systeme_alimentation": "Injection directe",
+    "valves": "4",
+    "puisFiscReelKW": "66 KW",
+    "puisFiscReelCH": "90 CH",
+    "collection": "non",
+    "date30": "",
+    "vin": "VF3WA9HXC9T008318",
+    "variante": "WA9HXC",
+    "boite_vitesse": "M",
+    "code_boite_vitesse": "BE4-5L",
+    "nr_passagers": "2",
+    "nb_portes": "0",
+    "type_mine": "-",
+    "cnit": "",
+    "couleur": "-",
+    "poids": "0",
+    "ccm": "1560 CM3",
+    "cylindres": "4",
+    "sra_id": "-",
+    "sra_group": "0",
+    "sra_commercial": "0",
+    "numero_serie": "9T008318",
+    "ptac": "",
+    "logo_marque": "https://api.apiplaqueimmatriculation.com/public/storage/logos_marques/?marque=peugeot",
+    "photo_modele": "https://api.apiplaqueimmatriculation.com/public/storage/photos_modeles/19352.jpg",
+    "k_type": "19352",
+    "tecdoc_manu_id": "88",
+    "tecdoc_model_id": "5522",
+    "tecdoc_car_id": "19352",
+    "code_moteur": "DV6ATED4_9HX",
+    "codes_platforme": "WA_,WC_",
+    "liste_sra_commercial": null,
+    "nbr_req_restants": 96
+  },
+  "EZ975MX": {
+    "erreur": "",
+    "immat": "EZ975MX",
+    "pays": "FR",
+    "marque": "CITROEN",
+    "modele": "BERLINGO II",
+    "version": "1.2 PURE",
+    "debut_modele": "2017-01",
+    "fin_modele": "",
+    "date1erCir_us": "2018-08-01",
+    "date1erCir_fr": "01-08-2018",
+    "co2": "119",
+    "energie": "12",
+    "energieNGC": "Électrique",
+    "genreVCG": "1",
+    "genreVCGNGC": "VP",
+    "puisFisc": "6",
+    "carrosserieCG": "LUDOSPACE",
+    "code_carrosserie": "51",
+    "carrosserie": "Moto",
+    "code_type_transmission": "9",
+    "type_transmission": "Courroie",
+    "capacite_litres": "",
+    "code_systeme_alimentation": "",
+    "systeme_alimentation": "",
+    "valves": "",
+    "puisFiscReelKW": "81 KW",
+    "puisFiscReelCH": "110 CH",
+    "collection": "non",
+    "date30": "1989-06-30",
+    "vin": "VF77JHNZ6JJ772424",
+    "variante": "7JHNZ6",
+    "boite_vitesse": "M",
+    "code_boite_vitesse": "",
+    "nr_passagers": "5",
+    "nb_portes": "5",
+    "type_mine": "7JHNZ6",
+    "cnit": "",
+    "couleur": "blanche",
+    "poids": "2010 kg",
+    "ccm": "",
+    "cylindres": "",
+    "sra_id": "CI54213",
+    "sra_group": "31",
+    "sra_commercial": "1.2 PURE TECH 110 FEEL",
+    "numero_serie": "JJ772424",
+    "ptac": "",
+    "logo_marque": "https://api.apiplaqueimmatriculation.com/public/storage/logos_marques/?marque=citroen",
+    "photo_modele": "https://api.apiplaqueimmatriculation.com/public/storage/photos_modeles/404.jpg",
+    "k_type": "122988",
+    "tecdoc_manu_id": "0",
+    "tecdoc_model_id": "0",
+    "tecdoc_car_id": "122988",
+    "code_moteur": "",
+    "codes_platforme": "B9",
+    "liste_sra_commercial": [
+      {
+        "sra_id": "CI54213",
+        "sra_commercial": "1.2 PURE TECH 110 FEEL"
+      },
+      {
+        "sra_id": "CI54214",
+        "sra_commercial": "1.2 PURE TECH 110 SHINE"
+      },
+      {
+        "sra_id": "CI54216",
+        "sra_commercial": "1.2 PURE TECH 110 VITAMINE"
+      },
+      {
+        "sra_id": "CI54215",
+        "sra_commercial": "1.2 PURE TECH 110 XTR +"
+      }
+    ],
+    "nbr_req_restants": 72
+  },
+  "UP16TC2805": {
+    "erreur": "Plaque immatriculation inconnue !"
+  },
+  "GJ179QG": {
+    "erreur": "",
+    "immat": "GJ179QG",
+    "pays": "FR",
+    "marque": "VOLKSWAGEN",
+    "modele": "POLO VI",
+    "version": "1.0 TSI",
+    "debut_modele": "",
+    "fin_modele": "",
+    "date1erCir_us": "2022-09-27",
+    "date1erCir_fr": "27-09-2022",
+    "co2": "119",
+    "energie": "4",
+    "energieNGC": "ESSENCE",
+    "genreVCG": "1",
+    "genreVCGNGC": "VP",
+    "puisFisc": "5",
+    "carrosserieCG": "CI",
+    "code_carrosserie": "",
+    "carrosserie": "BE5",
+    "code_type_transmission": "",
+    "type_transmission": "",
+    "capacite_litres": "",
+    "code_systeme_alimentation": "",
+    "systeme_alimentation": "",
+    "valves": "",
+    "puisFiscReelKW": "95 KW",
+    "puisFiscReelCH": "129 CH",
+    "collection": "non",
+    "date30": "1989-06-30",
+    "vin": "WVWZZZAWZNU082061",
+    "variante": "ZZZAWZ",
+    "boite_vitesse": "M",
+    "code_boite_vitesse": "",
+    "nr_passagers": "5",
+    "nb_portes": "5",
+    "type_mine": "AWABDLAC",
+    "cnit": "",
+    "couleur": "",
+    "poids": "1620 kg",
+    "ccm": "",
+    "cylindres": "3",
+    "sra_id": "VW54129",
+    "sra_group": "30",
+    "sra_commercial": "1.0 TSI 95 BUSINESS",
+    "numero_serie": "NU082061",
+    "ptac": "",
+    "logo_marque": "https://api.apiplaqueimmatriculation.com/public/storage/logos_marques/?marque=volkswagen",
+    "photo_modele": "https://api.apiplaqueimmatriculation.com/public/storage/photos_modeles/404.jpg",
+    "k_type": "271142",
+    "tecdoc_manu_id": "0",
+    "tecdoc_model_id": "0",
+    "tecdoc_car_id": "271142",
+    "code_moteur": "DLAC",
+    "codes_platforme": "AW1,BZ1,AE1",
+    "liste_sra_commercial": [
+      {
+        "sra_id": "VW54129",
+        "sra_commercial": "1.0 TSI 95"
+      },
+      {
+        "sra_id": "VW54009",
+        "sra_commercial": "1.0 TSI 95 CARAT"
+      },
+      {
+        "sra_id": "VW54014",
+        "sra_commercial": "1.0 TSI 95 CARAT DSG"
+      },
+      {
+        "sra_id": "VW54011",
+        "sra_commercial": "1.0 TSI 95 CARAT EXCLUSIVE"
+      },
+      {
+        "sra_id": "VW54016",
+        "sra_commercial": "1.0 TSI 95 CARAT EXCLUSIVE DSG"
+      },
+      {
+        "sra_id": "VW54028",
+        "sra_commercial": "1.0 TSI 95 CONFORTLINE BUSINESS"
+      },
+      {
+        "sra_id": "VW54029",
+        "sra_commercial": "1.0 TSI 95 CONFORTLINE BUSINESS DSG"
+      },
+      {
+        "sra_id": "VW54012",
+        "sra_commercial": "1.0 TSI 95 CONFORTLINE DSG"
+      },
+      {
+        "sra_id": "VW54047",
+        "sra_commercial": "1.0 TSI 95 CONNECT"
+      },
+      {
+        "sra_id": "VW54048",
+        "sra_commercial": "1.0 TSI 95 CONNECT DSG"
+      },
+      {
+        "sra_id": "VW54052",
+        "sra_commercial": "1.0 TSI 95 COPPER LINE"
+      },
+      {
+        "sra_id": "VW54053",
+        "sra_commercial": "1.0 TSI 95 COPPER LINE DSG"
+      },
+      {
+        "sra_id": "VW54008",
+        "sra_commercial": "1.0 TSI 95 FIRST EDITION"
+      },
+      {
+        "sra_id": "VW54013",
+        "sra_commercial": "1.0 TSI 95 FIRST EDITION DSG"
+      },
+      {
+        "sra_id": "VW54010",
+        "sra_commercial": "1.0 TSI 95 R-LINE"
+      },
+      {
+        "sra_id": "VW54015",
+        "sra_commercial": "1.0 TSI 95 R-LINE DSG"
+      },
+      {
+        "sra_id": "VW54006",
+        "sra_commercial": "1.0 TSI 95 TRENDLINE"
+      },
+      {
+        "sra_id": "VW54027",
+        "sra_commercial": "1.0 TSI 95 TRENDLINE BUSINESS"
+      }
+    ],
+    "nbr_req_restants": 65
+  },
+  "I0082": {
+    "erreur": "Plaque immatriculation inconnue !"
+  }
+}

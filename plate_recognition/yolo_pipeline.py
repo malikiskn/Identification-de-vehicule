@@ -24,13 +24,10 @@ import plotly.express as px
 cette fonction transforme l’image pour YOLO et récupère les prédictions brutes du modèle.
 '''
 def get_detections(img, net):
-    # Prétraitement de l'image (amélioration du contraste)
+    # Conserver les couleurs originales (supprimer la conversion en gris)
     image = img.copy()
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    image = cv2.equalizeHist(image)
-    image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-
-    # Adapter l'image au format carré YOLO
+    
+    # Adapter l'image au format carré
     row, col, _ = image.shape
     max_rc = max(row, col)
     input_image = np.zeros((max_rc, max_rc, 3), dtype=np.uint8)
@@ -39,9 +36,7 @@ def get_detections(img, net):
     # Préparer l'image pour le modèle
     blob = cv2.dnn.blobFromImage(input_image, 1/255, (INPUT_WIDTH, INPUT_HEIGHT), swapRB=True, crop=False)
     net.setInput(blob)
-
-    preds = net.forward()
-    detections = preds[0]
+    detections = net.forward()[0]  # Prendre le premier output
 
     return input_image, detections
 
@@ -154,31 +149,34 @@ def yolo_predictions(img, net):
 # vérifie qu’elle est valide, puis retourne le texte lu (ou 'no number' si vide).
 def extract_text(image, bbox=None, pad=2):
     if bbox is None:
-        # Si pas de bbox, on traite toute l'image
         x, y, w, h = 0, 0, image.shape[1], image.shape[0]
     else:
-        x, y, w, h = bbox    
+        x, y, w, h = bbox
+    
     x = max(0, x + pad)
     y = max(0, y + pad)
     w = max(0, w - 2 * pad)
     h = max(0, h - 2 * pad)
 
     roi = image[y:y+h, x:x+w]
-
     if 0 in roi.shape:
         return '', ''
 
-    # Première tentative classique
+    # Essai 1: Méthode originale
     config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
     raw_text = pytesseract.image_to_string(roi, config=config).strip().upper()
     cleaned_text = re.sub(r'^[-\d]+|[-]+$', '', raw_text)
 
-    # Si vide, retenter avec binarisation et psm 6
-    if not cleaned_text:
+    # Essai 2: Seulement si échec du premier essai
+    if not cleaned_text or len(cleaned_text) < 4:
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        fallback_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'
-        raw_text = pytesseract.image_to_string(binary, config=fallback_config).strip().upper()
+        raw_text = pytesseract.image_to_string(binary, config=config).strip().upper()
         cleaned_text = re.sub(r'^[-\d]+|[-]+$', '', raw_text)
 
-    return raw_text, cleaned_text
+    # Post-traitement supplémentaire
+    if cleaned_text:
+        # Supprime les petits groupes de caractères isolés
+        cleaned_text = ' '.join([word for word in cleaned_text.split() if len(word) > 2])
+        
+    return raw_text, cleaned_text if cleaned_text else 'Aucune lecture OCR'

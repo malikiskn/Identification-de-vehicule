@@ -275,7 +275,7 @@ def result():
     )
 
 from flask import Response
-import threading
+
 
 # Variable globale pour stocker les plaques détectées en direct
 live_plates = []
@@ -642,38 +642,66 @@ def manual_select():
     return render_template('manual_select.html', image_path=image_path)
 
 
-@app.route('/submit_selection', methods=['POST'])
+@app.route('/submit_selection', methods=['GET','POST'])
 def submit_selection():
     try:
-        x = round(float(request.form.get('x', 0)))
-        y = round(float(request.form.get('y', 0)))
-        width = round(float(request.form.get('width', 0)))
-        height = round(float(request.form.get('height', 0)))
-        image_path = request.form['image_path']
+        # 1. Récupérer TOUS les champs du formulaire dès le début (évite UnboundLocalError)
+        image_path = request.form['image_path']  # <-- Maintenant garantie d'exister
+        x = int(request.form['x'])
+        y = int(request.form['y'])
+        width = int(request.form['width'])
+        height = int(request.form['height'])
+        
+        # 2. Validation minimale de la sélection
+        if width < 50 or height < 20:
+            flash("La zone sélectionnée est trop petite (min. 50x20px)", "warning")
+            return redirect(url_for('manual_select', image_path=image_path))
+
+        # 3. Vérifier que l'image existe
+        img_path = os.path.join('static', 'exports', image_path)
+        if not os.path.exists(img_path):
+            flash("Image introuvable", "danger")
+            return redirect(url_for('index'))
+
+        # 4. Extraire la région sélectionnée (ROI)
+        img = cv2.imread(img_path)
+        roi = img[y:y+height, x:x+width]
+
+        # 5. Pré-traitement pour l'OCR
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # 6. Configuration Tesseract optimisée pour plaques
+        config = r'--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        text = pytesseract.image_to_string(binary, config=config).strip()
+
+        # 7. Nettoyage du texte
+        cleaned = re.sub(r'[^A-Z0-9]', '', text.upper())
+        if not cleaned or len(cleaned) < 4:
+            flash("Aucune plaque valide détectée dans la zone sélectionnée", "warning")
+            return redirect(url_for('manual_select', image_path=image_path))
+
+        # 8. Sauvegarde en base de données
+        save_plate(cleaned, source='manual', image_path=f"exports/{image_path}")
+
+        # 9. Redirection vers les résultats
+        return redirect(url_for('result', 
+                             media_type='image',
+                             plates=[cleaned],
+                             video_name=image_path))
+
+    except KeyError as e:
+        # Gère l'absence de champs dans le formulaire
+        flash(f"Erreur: Champ manquant ({str(e)})", "danger")
+        return redirect(url_for('index'))
+
     except Exception as e:
-        flash(f"❌ Erreur : {str(e)}", "danger")
-        return redirect(url_for('index'))
-
-    full_path = os.path.join('static', 'exports', image_path)
-    img = cv2.imread(full_path)
+        # Gère toutes les autres erreurs avec image_path désormais accessible
+        flash(f"Erreur lors de la sélection : {str(e)}", "danger")
+        return redirect(url_for('manual_select', image_path=image_path))
     
-    if img is None:
-        flash("❌ Image non trouvée", "danger")
-        return redirect(url_for('index'))
-
-    roi = img[y:y+height, x:x+width]
-    _, cleaned_text = extract_text(roi, bbox=None, pad=0)
-
-    if cleaned_text and cleaned_text.upper() not in ['NO NUMBER', 'NO TEXT']:
-        save_plate(cleaned_text, source='manual', image_path=f"exports/{image_path}")
-
-    return redirect(url_for('result', 
-                         media_type='image',
-                         plates=[cleaned_text] if cleaned_text else ['Aucune lecture OCR'],
-                         video_name=image_path))
-
-
-
+    
 @app.route('/retry_ocr/<path:image_path>')
 def retry_ocr(image_path):
     img = cv2.imread(os.path.join('static', 'exports', image_path))
@@ -692,6 +720,78 @@ def retry_ocr(image_path):
                          video_name=image_path))
 
 
+@app.route('/reprocess_image', methods=['POST'])
+def reprocess_image():
+    try:
+        image_path = request.form['image_path']
+        full_path = os.path.join('static', 'exports', image_path)
+        img = cv2.imread(full_path)
+        
+        if img is None:
+            flash("❌ Image non trouvée", "danger")
+            return redirect(url_for('history'))
+
+        # Essais progressifs
+        results = []
+        for pad in [0, 2, 5]:  # Différents paddings
+            _, text = extract_text(img, bbox=None, pad=pad)
+            if text and text not in ['Aucune lecture OCR', 'NO NUMBER']:
+                results.append(text)
+
+        # Prend le résultat le plus long (le plus probable)
+        final_text = max(results, key=len) if results else 'Aucune lecture OCR'
+
+        return redirect(url_for('result', 
+                            media_type='image',
+                            plates=[final_text],
+                            video_name=image_path))
+                            
+    except Exception as e:
+        print(f"Erreur reprocess: {str(e)}")
+        flash("❌ Erreur lors du retraitement", "danger")
+        return redirect(url_for('index'))
+
+@app.route('/enhance_image', methods=['POST'])
+def enhance_image():
+    try:
+        image_path = request.form['image_path']
+        full_path = os.path.join('static', 'exports', image_path)
+        
+        # Lire l'image
+        img = cv2.imread(full_path)
+        if img is None:
+            flash("❌ Image non trouvée", "danger")
+            return redirect(url_for('history'))
+
+        # Appliquer les améliorations
+        # --- Contraste adaptatif ---
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        l_enhanced = clahe.apply(l)
+        enhanced = cv2.merge((l_enhanced, a, b))
+        enhanced = cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
+        
+        # --- Réduction du bruit ---
+        enhanced = cv2.fastNlMeansDenoisingColored(enhanced, None, 10, 10, 7, 21)
+        
+        # Sauvegarder le résultat
+        enhanced_path = os.path.join('static', 'exports', f"enhanced_{image_path}")
+        cv2.imwrite(enhanced_path, enhanced)
+        
+        # Mettre à jour l'image résultat
+        cv2.imwrite(RESULT_IMG_PATH, enhanced)
+        shutil.copy(RESULT_IMG_PATH, os.path.join('static', 'exports', 'result.jpg'))
+
+        return redirect(url_for('result', 
+                            media_type='image',
+                            plates=["Qualité améliorée - Relancer la détection"],
+                            video_name=f"enhanced_{image_path}"))
+    except Exception as e:
+        print(f"Erreur enhancement: {str(e)}")
+        flash("❌ Erreur lors de l'amélioration", "danger")
+        return redirect(url_for('index'))
+    
 from database import init_db
 init_db()
 

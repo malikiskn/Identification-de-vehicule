@@ -33,11 +33,23 @@
     {% if vehicle_info %}
       <ul class="list-group">
         <li class="list-group-item"><strong>Marque :</strong> {{ vehicle_info.marque }}</li>
-        <li class="list-group-item"><strong>Modèle :</strong> {{ vehicle_info.modèle }}</li>
-        <li class="list-group-item"><strong>Année :</strong> {{ vehicle_info.année }}</li>
+        <li class="list-group-item"><strong>Modèle :</strong> {{ vehicle_info.modele }}</li>
+        <li class="list-group-item"><strong>Date de sortie du modele :</strong> {{ vehicle_info.debut_modele }}</li>
+        <li class="list-group-item"><strong>Date de 1ère circulation :</strong> {{ vehicle_info.date1erCir_fr}}</li>
         <li class="list-group-item"><strong>Couleur :</strong> {{ vehicle_info.couleur }}</li>
-        <li class="list-group-item"><strong>Boîte :</strong> {{ vehicle_info.boite }}</li>
-        <li class="list-group-item"><strong>Carburant :</strong> {{ vehicle_info.carburant }}</li>
+        <li class="list-group-item"><strong>Boîte vitesse :</strong> {{ vehicle_info.boite_vitesse }}</li>
+        <li class="list-group-item"><strong>Carburant :</strong> {{ vehicle_info.energieNGC }}</li>
+        <li class="list-group-item"><strong>Co2 :</strong> {{ vehicle_info.co2 }}</li>
+        <li class="list-group-item"><strong>Puissance :</strong> {{ vehicle_info.puisFisc }}</li>
+        <li class="list-group-item"><strong>Nombre de portes :</strong> {{ vehicle_info.nb_portes }}</li>
+        <li class="list-group-item"><strong>Nombre de places :</strong> {{ vehicle_info.nr_passagers }}</li>
+        <li class="list-group-item"><strong>Poids :</strong> {{ vehicle_info.poids }}</li>
+        <li class="list-group-item"><strong>Pays :</strong> {{ vehicle_info.pays }}</li>
+        <li class="list-group-item"><strong>Version :</strong> {{ vehicle_info.version }}</li>
+        <li class="list-group-item"><strong>Numero de serie :</strong> {{ vehicle_info.type }}</li>
+        <li class="list-group-item"><strong>Logo :</strong> {{ vehicle_info.logo_marque }}</li>
+        <li class="list-group-item"><strong>model publicitaire :</strong> {{ vehicle_info.photo_modele }}</li>
+        
       </ul>
     {% else %}
       <div class="alert alert-warning mt-4">❌ Aucune donnée trouvée pour cette plaque.</div>

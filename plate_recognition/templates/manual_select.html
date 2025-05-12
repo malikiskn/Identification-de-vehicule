@@ -2,37 +2,81 @@
 <html>
 <head>
     <title>Sélection manuelle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        #image-container { position: relative; display: inline-block; }
+        #image-container { 
+            position: relative; 
+            display: inline-block;
+            margin: 20px 0;
+        }
+        #target-image {
+            max-width: 80%;
+            border: 1px solid #ddd;
+            cursor: crosshair;
+        }
         #selection-box {
             position: absolute;
             border: 2px dashed red;
             display: none;
+            pointer-events: none;
+        }
+        .debug-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
-<body>
-    <h2>Encadrez la plaque avec votre souris</h2>
+<body class="container mt-4">
+    <h2 class="mb-4">Encadrez la plaque avec votre souris</h2>
+    
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Cliquez-glissez pour sélectionner la plaque, puis validez
+    </div>
     
     <div id="image-container">
-        <img id="target-image" src="{{ url_for('static', filename='exports/' + image_path) }}" style="max-width: 80%;">
+        <img id="target-image" 
+             src="{{ url_for('static', filename='exports/' + image_path) }}" 
+             alt="Image à analyser">
         <div id="selection-box"></div>
     </div>
-
-    <form action="/submit_selection" method="POST">
+<form action="{{ url_for('submit_selection') }}" method="POST" id="plate-form">
+    
         <input type="hidden" name="x" id="x">
         <input type="hidden" name="y" id="y">
         <input type="hidden" name="width" id="width">
         <input type="hidden" name="height" id="height">
         <input type="hidden" name="image_path" value="{{ image_path }}">
-        <button type="submit" class="btn btn-primary">Valider la sélection</button>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Valider la sélection
+            </button>
+            <button type="button" id="debugBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-bug"></i> Mode Debug
+            </button>
+        </div>
     </form>
 
     <script>
+        // Variables d'état
+        let isDragging = false;
         let startX, startY;
         const box = document.getElementById('selection-box');
         const img = document.getElementById('target-image');
+        let debugMode = false;
 
+        // Activation du debug
+        document.getElementById('debugBtn').addEventListener('click', function() {
+            debugMode = !debugMode;
+            this.classList.toggle('btn-warning');
+            alert(`Mode debug ${debugMode ? 'activé' : 'désactivé'}\nVérifiez la console (F12)`);
+        });
+
+        // Gestion de la sélection
         img.addEventListener('mousedown', (e) => {
             const rect = img.getBoundingClientRect();
             startX = e.clientX - rect.left;
@@ -43,10 +87,16 @@
             box.style.width = '0px';
             box.style.height = '0px';
             box.style.display = 'block';
+            isDragging = true;
+
+            if (debugMode) {
+                console.log(`Début sélection: X=${Math.round(startX)}, Y=${Math.round(startY)}`);
+                addDebugDot(startX, startY, 'green');
+            }
         });
 
         window.addEventListener('mousemove', (e) => {
-            if (!startX) return;
+            if (!isDragging) return;
             
             const rect = img.getBoundingClientRect();
             const currentX = e.clientX - rect.left;
@@ -57,15 +107,58 @@
         });
 
         window.addEventListener('mouseup', () => {
-            if (!startX) return;
+            if (!isDragging) return;
             
-            document.getElementById('x').value = startX;
-            document.getElementById('y').value = startY;
-            document.getElementById('width').value = parseInt(box.style.width);
-            document.getElementById('height').value = parseInt(box.style.height);
+            const endX = startX + parseInt(box.style.width);
+            const endY = startY + parseInt(box.style.height);
             
-            startX = null;
+            document.getElementById('x').value = Math.round(startX);
+            document.getElementById('y').value = Math.round(startY);
+            document.getElementById('width').value = Math.abs(Math.round(parseInt(box.style.width)));
+            document.getElementById('height').value = Math.abs(Math.round(parseInt(box.style.height)));
+            
+            if (debugMode) {
+                console.log(`Fin sélection: Largeur=${box.style.width}, Hauteur=${box.style.height}`);
+                console.log(`Coordonnées envoyées: X=${startX}, Y=${startY}, W=${box.style.width}, H=${box.style.height}`);
+                addDebugDot(endX, endY, 'blue');
+            }
+            
+            isDragging = false;
         });
+
+        // Fonctions debug
+        function addDebugDot(x, y, color) {
+            const dot = document.createElement('div');
+            dot.className = 'debug-dot';
+            dot.style.left = x + 'px';
+            dot.style.top = y + 'px';
+            dot.style.backgroundColor = color;
+            img.parentNode.appendChild(dot);
+        }
+
+        // Debug des clics
+        img.addEventListener('click', function(e) {
+            if (debugMode && !isDragging) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                console.log(`Clic: X=${Math.round(x)}, Y=${Math.round(y)}`);
+                addDebugDot(x, y, 'red');
+            }
+        });
+    document.getElementById('plate-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Empêche la soumission par défaut
+    fetch("{{ url_for('submit_selection') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(this))
+    })
+    .then(response => window.location.href = "/result")
+    .catch(err => console.error("Erreur:", err));
+});
+        
     </script>
 </body>
 </html>
