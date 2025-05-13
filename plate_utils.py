@@ -25,3 +25,4 @@ def is_valid_plate(plate):
         return False
         
     return True
+

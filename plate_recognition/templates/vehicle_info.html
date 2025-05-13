@@ -1,77 +1,246 @@
-<!-- vehicle_info.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Infos véhicule</title>
+  <title>Infos véhicule - {{ plate }}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --card-color: #ffffff;
+      --text-color: #212529;
+      --border-color: #dee2e6;
+    }
+    
+    .dark-mode {
+      --bg-color: #1a1a1a;
+      --card-color: #2d2d2d;
+      --text-color: #f8f9fa;
+      --border-color: #495057;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding-bottom: 40px;
+      transition: all 0.3s ease;
+    }
+    
+    .vehicle-header {
+      background: linear-gradient(135deg, var(--bg-color) 0%, #c3cfe2 100%);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .dark-mode .vehicle-header {
+      background: linear-gradient(135deg, var(--card-color) 0%, #3d4c6b 100%);
+    }
+    
+    .logo-container {
+      max-width: 120px;
+      margin: 0 auto 15px;
+    }
+    
+    .vehicle-image {
+      max-height: 200px;
+      object-fit: contain;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+    }
+    
+    .model-image {
+      max-height: 120px; /* Taille réduite comme demandé */
+      width: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      margin: 0 auto;
+      display: block;
+    }
+    
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .spec-card {
+      padding: 15px;
+      background: var(--card-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+    }
+    
+    .spec-card h5 {
+      font-size: 1.1rem; /* Taille originale */
+      margin-bottom: 12px;
+      color: var(--text-color);
+    }
+    
+    .spec-card p {
+      font-size: 1rem; /* Taille originale */
+      margin-bottom: 8px;
+    }
+    
+    .plate-badge {
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      padding: 8px 15px;
+    }
+    
+    .theme-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 
-  <!-- 🌐 Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3">
     <a class="navbar-brand fw-bold" href="/">🚘 ANPR</a>
-    <div class="collapse navbar-collapse" id="mainNavbar">
+    <div class="collapse navbar-collapse">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link" href="/">🏠 Accueil</a></li>
         <li class="nav-item"><a class="nav-link" href="/history">📋 Historique</a></li>
-        <li class="nav-item"><a class="nav-link" href="/admin">⚙️ Admin</a></li>
-        <li class="nav-item"><button id="toggle-theme" class="btn btn-sm btn-outline-light ms-3">🌙 Thème</button></li>
       </ul>
     </div>
   </nav>
 
-  <div class="container py-5">
-    <h2 class="mb-4">🔍 Détails pour la plaque <span class="text-primary">{{ plate }}</span></h2>
-  
-    {% if image_path %}
-    <div clas="text-center mb-4">
-      <img src="{{ url_for('static', filename=image_path) }}" class="img-fluid rounded shadow" style="max-height: 300px;">
+  <div class="container py-4">
+    <!-- En-tête -->
+    <div class="vehicle-header text-center">
+      <h3 class="mb-3">Détails pour la plaque</h3>
+      <span class="badge bg-primary plate-badge">{{ plate }}</span>
+      
+      {% if vehicle_info and vehicle_info.logo_marque %}
+      <div class="logo-container">
+        <img src="{{ vehicle_info.logo_marque }}" 
+             alt="Logo {{ vehicle_info.marque }}" 
+             class="img-fluid">
+      </div>
+      {% endif %}
     </div>
-  {% endif %}
-  
-    {% if vehicle_info %}
-      <ul class="list-group">
-        <li class="list-group-item"><strong>Marque :</strong> {{ vehicle_info.marque }}</li>
-        <li class="list-group-item"><strong>Modèle :</strong> {{ vehicle_info.modele }}</li>
-        <li class="list-group-item"><strong>Date de sortie du modele :</strong> {{ vehicle_info.debut_modele }}</li>
-        <li class="list-group-item"><strong>Date de 1ère circulation :</strong> {{ vehicle_info.date1erCir_fr}}</li>
-        <li class="list-group-item"><strong>Couleur :</strong> {{ vehicle_info.couleur }}</li>
-        <li class="list-group-item"><strong>Boîte vitesse :</strong> {{ vehicle_info.boite_vitesse }}</li>
-        <li class="list-group-item"><strong>Carburant :</strong> {{ vehicle_info.energieNGC }}</li>
-        <li class="list-group-item"><strong>Co2 :</strong> {{ vehicle_info.co2 }}</li>
-        <li class="list-group-item"><strong>Puissance :</strong> {{ vehicle_info.puisFisc }}</li>
-        <li class="list-group-item"><strong>Nombre de portes :</strong> {{ vehicle_info.nb_portes }}</li>
-        <li class="list-group-item"><strong>Nombre de places :</strong> {{ vehicle_info.nr_passagers }}</li>
-        <li class="list-group-item"><strong>Poids :</strong> {{ vehicle_info.poids }}</li>
-        <li class="list-group-item"><strong>Pays :</strong> {{ vehicle_info.pays }}</li>
-        <li class="list-group-item"><strong>Version :</strong> {{ vehicle_info.version }}</li>
-        <li class="list-group-item"><strong>Numero de serie :</strong> {{ vehicle_info.type }}</li>
-        <li class="list-group-item"><strong>Logo :</strong> {{ vehicle_info.logo_marque }}</li>
-        <li class="list-group-item"><strong>model publicitaire :</strong> {{ vehicle_info.photo_modele }}</li>
-        
-      </ul>
-    {% else %}
-      <div class="alert alert-warning mt-4">❌ Aucune donnée trouvée pour cette plaque.</div>
+
+    <!-- Image plaque -->
+    {% if image_path %}
+    <div class="text-center">
+      <img src="{{ url_for('static', filename=image_path) }}" 
+           class="vehicle-image img-fluid"
+           alt="Photo du véhicule">
+    </div>
     {% endif %}
-  
-    <a href="/history" class="btn btn-secondary mt-4">⬅ Retour à l'historique</a>
+
+    <!-- Modèle publicitaire (uniquement si disponible) -->
+    {% if vehicle_info and vehicle_info.photo_modele and vehicle_info.photo_modele != 'N/A' %}
+    <div class="text-center mb-3">
+      <h5 class="mb-2">Modèle publicitaire</h5>
+      <img src="{{ vehicle_info.photo_modele }}" 
+           class="model-image"
+           alt="Modèle {{ vehicle_info.modele }}">
+      {% if vehicle_info.modele %}
+      <p class="mt-2 text-muted">{{ vehicle_info.modele }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Informations véhicule (taille originale conservée) -->
+    {% if vehicle_info %}
+    <div class="specs-grid">
+      <div class="spec-card">
+        <h5>Identification</h5>
+        <p><strong>Marque :</strong> {{ vehicle_info.marque or 'N/A' }}</p>
+        <p><strong>Modèle :</strong> {{ vehicle_info.modele or 'N/A' }}</p>
+        <p><strong>Version :</strong> {{ vehicle_info.version or 'N/A' }}</p>
+      </div>
+
+      <div class="spec-card">
+        <h5>Technique</h5>
+        <p><strong>Carburant :</strong> {{ vehicle_info.energieNGC or 'N/A' }}</p>
+        <p><strong>Boîte :</strong> {{ vehicle_info.boite_vitesse or 'N/A' }}</p>
+        <p><strong>Puissance :</strong> {{ vehicle_info.puisFisc or 'N/A' }} CV</p>
+      </div>
+
+      <div class="spec-card">
+        <h5>Caractéristiques</h5>
+        <p><strong>Couleur :</strong> {{ vehicle_info.couleur or 'N/A' }}</p>
+        <p><strong>Portes :</strong> {{ vehicle_info.nb_portes or 'N/A' }}</p>
+        <p><strong>Places :</strong> {{ vehicle_info.nr_passagers or 'N/A' }}</p>
+      </div>
+
+      <div class="spec-card">
+        <h5>Administratif</h5>
+        <p><strong>1ère circulation :</strong> {{ vehicle_info.date1erCir_fr or 'N/A' }}</p>
+        <p><strong>Pays :</strong> {{ vehicle_info.pays or 'N/A' }}</p>
+        <p><strong>CO² :</strong> {{ vehicle_info.co2 or 'N/A' }} g/km</p>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center py-3">
+      ❌ Aucune donnée disponible pour cette plaque
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-3">
+      <a href="/history" class="btn btn-secondary">
+        ← Retour à l'historique
+      </a>
+    </div>
   </div>
 
+  <!-- Bouton thème -->
+  <button id="toggle-theme" class="theme-btn btn btn-dark shadow-lg">
+    🌙
+  </button>
+
   <script>
+    // Gestion du thème
     const toggleBtn = document.getElementById("toggle-theme");
     const body = document.body;
 
+    // Vérifier le thème stocké
     if (localStorage.getItem("theme") === "dark") {
       body.classList.add("dark-mode");
-      toggleBtn.textContent = "🌞 Thème clair";
+      toggleBtn.textContent = "🌞";
+      toggleBtn.classList.remove("btn-dark");
+      toggleBtn.classList.add("btn-light");
     }
 
+    // Basculer le thème
     toggleBtn.addEventListener("click", () => {
       body.classList.toggle("dark-mode");
-      const mode = body.classList.contains("dark-mode") ? "dark" : "light";
-      toggleBtn.textContent = mode === "dark" ? "🌞 Thème clair" : "🌙 Thème sombre";
-      localStorage.setItem("theme", mode);
+      const isDark = body.classList.contains("dark-mode");
+      toggleBtn.textContent = isDark ? "🌞" : "🌙";
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      
+      // Changer la classe du bouton
+      toggleBtn.classList.toggle("btn-dark", !isDark);
+      toggleBtn.classList.toggle("btn-light", isDark);
+    });
+
+    // Masquer les images erronées
+    document.querySelectorAll('img').forEach(img => {
+      img.onerror = function() {
+        this.style.display = 'none';
+        const parent = this.parentElement;
+        if (parent.querySelectorAll('img').length === 1) {
+          parent.style.display = 'none';
+        }
+      };
     });
   </script>
 
