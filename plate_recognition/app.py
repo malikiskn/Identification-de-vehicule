@@ -108,7 +108,7 @@ def upload_image():
     # Sauvegarde pour affichage dans result.html
     cv2.imwrite(RESULT_IMG_PATH, result_img)
 
-    # ✅ Copie aussi dans static/exports/result.jpg pour encadrement manuel
+    
     import shutil
     shutil.copy(RESULT_IMG_PATH, os.path.join(EXPORT_FOLDER, 'result.jpg'))
 
@@ -268,7 +268,7 @@ def use_webcam():
             no_plate_counter = 0
 
         if frame_count > min_duration and no_plate_counter > no_plate_limit:
-            print("🛑 Arrêt anticipé : plus de plaques détectées.")
+            #print("🛑 Arrêt anticipé : plus de plaques détectées.")
             break
 
     cap.release()
@@ -323,7 +323,7 @@ def result():
         media_type=media_type,
         plates=plates,
         video_name=video_name,
-        time=time.time  # ⬅️ très important
+        time=time.time  
     )
 
 

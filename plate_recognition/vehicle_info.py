@@ -4,11 +4,7 @@ import json
 
 def fetch_vehicle_info(plate_number, token="TokenDemo2025", country="FR"):
     """
-    Récupère les informations d'un véhicule à partir de son numéro de plaque.
-    Arguments :
-        - plate_number (str) : numéro de plaque (ex. "AA-123-BA")
-        - token (str)        : votre clé d'accès à l'API
-        - country (str)      : code pays (par défaut "FR")
+    Récupère les informations d'un véhicule à partir de son numéro de plaque
     Retourne :
         - (dict, None) en cas de succès, où dict est le JSON retourné par l'API
         - (None, str) en cas d'erreur, où str est le message d'erreur
@@ -49,6 +45,9 @@ def fetch_vehicle_info(plate_number, token="TokenDemo2025", country="FR"):
 
 
 def save_vehicle_info(plate_number, filename="Imatriculation_info.json"):
+    """
+    Utilise recupere les infos de fetch_vehicle_info pour sauvegarder Les inforamation dans un fichier json 
+    """
     raw_data, error = fetch_vehicle_info(plate_number)
     if error:
         print(f"Erreur lors de la récupération de {plate_number} : {error}")
@@ -82,6 +81,12 @@ def save_vehicle_info(plate_number, filename="Imatriculation_info.json"):
 
 
 def get_local_vehicle_info(plate_number, filename="Imatriculation_info.json"):
+    """
+    Permet de recuperer les information local grace a la plaque d'imatriculation
+    Retourne :
+        - Toute les information de la plaque
+        - None  Si le fichier ou l'information de la plaque  n'hesite pas 
+    """
     plate_key = plate_number.replace("-", "").upper()
     if not os.path.exists(filename):
         return None
@@ -97,7 +102,13 @@ def get_local_vehicle_info(plate_number, filename="Imatriculation_info.json"):
     else:
         return None
 
+
 def get_vehicle_details(plate_number):
+    """
+    Permet de recuperer les information local grace a la plaque d'imatriculation mais si elle n'hesite pas fait la recherche sur l'api tout en la sauvegardent  se qui permet recuperer les information local grace a la plaque d'imatriculation
+    Retourne :
+        - Toute les information de la plaque
+    """
     clean_plate = plate_number.upper().replace("-", "").replace(" ", "")
     print("demande info plaque")
 

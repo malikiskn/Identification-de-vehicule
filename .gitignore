@@ -231,3 +231,4 @@ exports/
 __pycache__/
 plate_recognition/uploads/
 *.jpg
+.github

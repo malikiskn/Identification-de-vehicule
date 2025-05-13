@@ -1,3 +1,6 @@
+## Malick Sokhona 21910279
+## Rousseau Pierre-alexandre 21902963
+
 # Système d'Identification de Véhicules par Détection de Plaques d'Immatriculation
 
 ## 🚗 Description
@@ -7,6 +10,15 @@ Un système complet de reconnaissance automatique de plaques d'immatriculation (
 - Reconnaissance optique de caractères (OCR) pour les plaques
 - Interface web interactive avec Flask
 - Historique des détections dans une base de données
+
+## 🔐 Accès Administration
+
+L'interface d'administration est protégée par mot de passe.  
+**Identifiants par défaut :**  
+- URL : `/admin`  
+- Mot de passe : `admin`  
+
+Pour modifier le mot de passe, éditez la variable `ADMIN_PASSWORD` dans `app.py`.
 
 ## 🛠️ Technologies utilisées
 
