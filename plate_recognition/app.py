@@ -4,7 +4,6 @@ import cv2
 from yolo_pipeline import yolo_predictions
 from database import save_plate
 from datetime import datetime
-from config import INPUT_WIDTH, INPUT_HEIGHT
 from database import get_connection
 import io
 from flask import send_file
@@ -18,6 +17,7 @@ from werkzeug.utils import secure_filename
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from plate_utils import is_valid_plate
+import difflib
 
 
 
@@ -133,12 +133,10 @@ def upload_video():
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(RAW_VIDEO_PATH, fourcc, fps, (width, height))
 
-    plates_dict = {}
+    plates_dict = {}  # Dictionnaire pour stocker les plaques uniques
     frame_count = 0
-
-    plates_dict = {}
-    frame_count = 0
-    valid_detections = 0  # Compteur de détections valides
+    last_valid_plate = None
+    plate_counter = {}
 
     while True:
         ret, frame = cap.read()
@@ -149,39 +147,40 @@ def upload_video():
         result_img, new_texts = yolo_predictions(frame, net)
         out.write(result_img)
 
-        # Nouveau filtrage renforcé
+        # Filtrer et compter les plaques valides
         for plate in new_texts:
             if is_valid_plate(plate):
-                clean = plate.replace(" ", "").upper()
-                if clean not in plates_dict:
-                    valid_detections += 1
-                    print(f"✅ Frame {frame_count} - Plaque valide : {plate}")
-                plates_dict[clean] = plate  # Garde la dernière version
+                cleaned_plate = clean_plate_text(plate)
+                
+                # Vérifier la similarité avec les plaques déjà détectées
+                is_new_plate = True
+                for existing_plate in plates_dict.keys():
+                    # Utiliser un seuil de similarité de 85%
+                    if difflib.SequenceMatcher(None, cleaned_plate, existing_plate).ratio() > 0.85:
+                        is_new_plate = False
+                        cleaned_plate = existing_plate  # Garder la version existante
+                        break
+                
+                if is_new_plate:
+                    plates_dict[cleaned_plate] = plate  # Garder la version originale
+                    plate_counter[cleaned_plate] = 1
+                else:
+                    plate_counter[cleaned_plate] += 1
 
-    # Vérification finale
-    if valid_detections == 0:
-        print("Aucune détection valide dans toute la vidéo")
-        valid_plates = ['Aucune plaque valide détectée']
-    else:
-        valid_plates = list(plates_dict.values())
-        print(f"\n🔥 {valid_detections} détections valides sur {frame_count} frames")
     cap.release()
     out.release()
 
-    # Debug: Affiche toutes les plaques valides trouvées
-    print("\nPlaques valides finales:")
-    for i, (clean, orig) in enumerate(plates_dict.items(), 1):
-        print(f"{i}. Original: {orig} | Nettoyé: {clean}")
+    # Ne garder que les plaques détectées plusieurs fois (pour éviter les faux positifs)
+    final_plates = []
+    for plate, count in plate_counter.items():
+        if count >= 3:  # Seuil minimum de détections pour considérer la plaque comme valide
+            final_plates.append(plates_dict[plate])
 
-    if not plates_dict:
-        print("Aucune plaque valide trouvée dans toute la vidéo")
-        valid_plates = ['Aucune plaque valide détectée']
-    else:
-        valid_plates = list(plates_dict.values())
-
+    if not final_plates:
+        final_plates = ['Aucune plaque valide détectée']
 
     # Génération du nom de fichier
-    main_plate = clean_plate_text(valid_plates[0]) if valid_plates else None
+    main_plate = clean_plate_text(final_plates[0]) if final_plates else None
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
     video_name = f"{main_plate}_{now_str}.mp4" if main_plate else f"video_{now_str}.mp4"
     video_path = os.path.join('static', 'exports', video_name)
@@ -192,7 +191,7 @@ def upload_video():
         os.remove(RAW_VIDEO_PATH)
 
     # Sauvegarde en base
-    for plate in valid_plates:
+    for plate in final_plates:
         if plate not in ['Aucune plaque valide détectée']:
             save_plate(plate, source='video', image_path=f"exports/{video_name}")
 
@@ -202,13 +201,14 @@ def upload_video():
 
     return redirect(url_for('result', 
                          media_type='video',
-                         plates=",".join(valid_plates),
+                         plates=",".join(final_plates),
                          video_name=video_name))
-
 
 def clean_plate_text(text):
     """Nettoie le texte de la plaque pour comparaison"""
-    return text.replace(" ", "").upper()
+    if not text:
+        return ""
+    return ''.join(c for c in str(text).upper() if c.isalnum() or c == '-')
 
 @app.route('/use_webcam', methods=['POST'])
 def use_webcam():
@@ -224,7 +224,8 @@ def use_webcam():
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(RAW_VIDEO_PATH, fourcc, fps, (width, height))
 
-    texts = []
+    plates_dict = {}  # Dictionnaire pour stocker les plaques uniques
+    plate_counter = {}  # Compteur d'occurrences par plaque
     frame_count = 0
     min_duration = fps * 5      # Minimum 5 secondes
     max_duration = fps * 15     # Maximum 15 secondes
@@ -238,10 +239,30 @@ def use_webcam():
 
         result_img, new_texts = yolo_predictions(frame, net)
         out.write(result_img)
-        texts.extend(new_texts)
         frame_count += 1
 
-        if not any(t and t.lower() not in ['no number', 'no text'] for t in new_texts):
+        # Traitement des plaques détectées
+        has_valid_plate = False
+        for plate in new_texts:
+            if is_valid_plate(plate):
+                has_valid_plate = True
+                cleaned = clean_plate_text(plate)
+                
+                # Vérifier la similarité avec les plaques existantes
+                is_new = True
+                for existing in plates_dict.keys():
+                    if difflib.SequenceMatcher(None, cleaned, existing).ratio() > 0.85:
+                        is_new = False
+                        cleaned = existing  # Garder la version existante
+                        break
+                
+                if is_new:
+                    plates_dict[cleaned] = plate  # Garde la version originale
+                    plate_counter[cleaned] = 1
+                else:
+                    plate_counter[cleaned] += 1
+
+        if not has_valid_plate:
             no_plate_counter += 1
         else:
             no_plate_counter = 0
@@ -253,14 +274,17 @@ def use_webcam():
     cap.release()
     out.release()
 
-    print(" Fichier temporaire écrit :", os.path.exists(RAW_VIDEO_PATH))
-    if not os.path.exists(RAW_VIDEO_PATH):
-        print("❌ Le fichier AVI n'a pas été généré.")
+    # Filtrer les plaques détectées au moins 3 fois
+    final_plates = []
+    for plate, count in plate_counter.items():
+        if count >= 3:  # Seuil minimum de détections
+            final_plates.append(plates_dict[plate])
 
-    # Nettoyage pour nommage fichier
-    cleaned_texts = [t.replace("-", "").replace(" ", "").upper() for t in texts if t and t.upper() not in ['NO NUMBER', 'NO TEXT']]
-    main_plate = cleaned_texts[0] if cleaned_texts else None
+    if not final_plates:
+        final_plates = ['Aucune plaque valide détectée']
 
+    # Génération du nom de fichier
+    main_plate = clean_plate_text(final_plates[0]) if final_plates else None
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
     if main_plate:
         final_name = f"{main_plate}_{now_str}.mp4"
@@ -271,26 +295,20 @@ def use_webcam():
 
     # Conversion vidéo
     ffmpeg_cmd = f"ffmpeg -y -i {RAW_VIDEO_PATH} -vcodec libx264 -crf 23 {result_path}"
-    print("🛠️ Exécution de FFMPEG :", ffmpeg_cmd)
     os.system(ffmpeg_cmd)
-
-    print("🎬 Fichier converti :", result_path)
-    print("📁 Fichier existe ?", os.path.exists(result_path))
 
     if os.path.exists(RAW_VIDEO_PATH):
         os.remove(RAW_VIDEO_PATH)
-        print("🧹 Fichier temporaire supprimé.")
 
-    # Sauvegarde en base (hors NO TEXT et NO NUMBER)
-    for plate in texts:
-        if plate and plate.upper() not in ['NO NUMBER', 'NO TEXT']:
-            print(f"💾 Sauvegarde DB pour : {plate} -> exports/{final_name}")
+    # Sauvegarde en base (uniquement les plaques valides et uniques)
+    for plate in final_plates:
+        if plate and plate.upper() not in ['AUCUNE PLAQUE VALIDE DETECTEE']:
             save_plate(plate, source='webcam', image_path=f"exports/{final_name}")
 
-    # Affichage final sans fausses plaques
-    valid_texts = [t for t in texts if t and t.upper() not in ['NO NUMBER', 'NO TEXT']]
-    return redirect(url_for('result', media_type='video', plates=",".join(valid_texts), video_name=final_name))
-
+    return redirect(url_for('result', 
+                         media_type='video',
+                         plates=",".join(final_plates),
+                         video_name=final_name))
 # Résultat
 import time
 

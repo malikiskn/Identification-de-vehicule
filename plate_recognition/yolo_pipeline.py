@@ -132,23 +132,20 @@ def yolo_predictions(img, net):
         raw_text, cleaned_text = extract_text(result_img, boxes[ind], pad=2)
         
         if is_valid_plate(cleaned_text):
-            detected_texts.append(cleaned_text)
+            # Vérifier si la plaque est similaire à une déjà détectée
+            is_new = True
+            for existing in detected_texts:
+                if difflib.SequenceMatcher(None, cleaned_text, existing).ratio() > 0.85:
+                    is_new = False
+                    break
+            if is_new:
+                detected_texts.append(cleaned_text)
 
     if not detected_texts:
         detected_texts.append('Aucune lecture OCR')
 
-    # Suppression des doublons similaires (85% de similarité)
-    unique_texts = []
-    for text in detected_texts:
-        if not any(difflib.SequenceMatcher(None, text, existing).ratio() > 0.85 
-                  for existing in unique_texts):
-            unique_texts.append(text)
-
     result_img = drawings(result_img, boxes, confidences, indexes)
-    # Ajoutez ceci avant le return :
-    if detected_texts and all(t == 'Aucune lecture OCR' for t in detected_texts):
-        detected_texts = []  # Force un résultat vide si que des faux positifs
-    return result_img, unique_texts
+    return result_img, detected_texts
 
 # Cette fonction utilise Tesseract OCR pour lire le texte contenu dans une boîte (bbox).
 # Elle extrait la région de l’image correspondant à la plaque,

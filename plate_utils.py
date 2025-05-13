@@ -15,7 +15,13 @@ def is_valid_plate(plate):
     has_digit = any(c.isdigit() for c in cleaned)
     min_length = 7 if '-' in cleaned else 9
     
-    return (len(cleaned) >= min_length 
-            and has_letter 
-            and has_digit 
-            and not cleaned.startswith('MP'))  # Filtre les faux positifs
+    # Filtres supplémentaires
+    if (len(cleaned) < min_length or 
+        not has_letter or 
+        not has_digit or 
+        cleaned.startswith('MP') or  # Filtre les faux positifs
+        cleaned.endswith('!') or     # Filtre les artefacts
+        sum(c.isdigit() for c in cleaned) < 3):  # Doit avoir au moins 3 chiffres
+        return False
+        
+    return True
