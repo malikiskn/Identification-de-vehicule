@@ -5,6 +5,12 @@ import platform
 import pytesseract
 import re
 import difflib
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from plate_utils import is_valid_plate
+
+
 # Spécifie le chemin de Tesseract selon le système d'exploitation
 if platform.system() == 'Darwin':  # macOS
     pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
@@ -17,8 +23,7 @@ else:  # Linux
 
 INPUT_WIDTH =  640
 INPUT_HEIGHT = 640
-from skimage import io
-import plotly.express as px
+
 
 '''
 cette fonction transforme l’image pour YOLO et récupère les prédictions brutes du modèle.
@@ -125,24 +130,25 @@ def yolo_predictions(img, net):
 
     for ind in indexes:
         raw_text, cleaned_text = extract_text(result_img, boxes[ind], pad=2)
-        print(f'OCR brut: {raw_text}, Nettoyé: {cleaned_text}')
-
-        if len(cleaned_text) >= 4:
+        
+        if is_valid_plate(cleaned_text):
             detected_texts.append(cleaned_text)
 
     if not detected_texts:
         detected_texts.append('Aucune lecture OCR')
 
-    # Supprimer les doublons proches
-    unique_texts = list(set(detected_texts))
-    filtered_texts = []
-    for text in unique_texts:
-        if not difflib.get_close_matches(text, filtered_texts, n=1, cutoff=0.85):
-            filtered_texts.append(text)
+    # Suppression des doublons similaires (85% de similarité)
+    unique_texts = []
+    for text in detected_texts:
+        if not any(difflib.SequenceMatcher(None, text, existing).ratio() > 0.85 
+                  for existing in unique_texts):
+            unique_texts.append(text)
 
     result_img = drawings(result_img, boxes, confidences, indexes)
-    return result_img, filtered_texts
-
+    # Ajoutez ceci avant le return :
+    if detected_texts and all(t == 'Aucune lecture OCR' for t in detected_texts):
+        detected_texts = []  # Force un résultat vide si que des faux positifs
+    return result_img, unique_texts
 
 # Cette fonction utilise Tesseract OCR pour lire le texte contenu dans une boîte (bbox).
 # Elle extrait la région de l’image correspondant à la plaque,

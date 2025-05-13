@@ -15,6 +15,11 @@ from flask import Response
 import time  
 from yolo_pipeline import extract_text
 from werkzeug.utils import secure_filename
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from plate_utils import is_valid_plate
+
+
 
 app = Flask(__name__)
 
@@ -63,14 +68,19 @@ def upload_image():
     if not allowed_file(file.filename):
         return "❌ Format non supporté."
 
-    filename = file.filename
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
     image = cv2.imread(file_path)
-
     net = load_model()
     result_img, texts = yolo_predictions(image, net)
+
+    # Filtrage final pour l'affichage
+    valid_plates = [plate for plate in texts if is_valid_plate(plate)]
+    
+    if not valid_plates:
+        valid_plates = ['Aucune plaque valide détectée']
 
     from datetime import datetime
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -104,77 +114,101 @@ def upload_image():
 
     return redirect(url_for('result', media_type='image', plates=",".join(texts), video_name=image_filename))
 
-# 🔹 Upload de vidéo
 @app.route('/upload_video', methods=['POST'])
 def upload_video():
     file = request.files['file']
     if not allowed_file(file.filename):
         return "❌ Vidéo non supportée."
 
-    filename = file.filename
-    input_path = os.path.join(UPLOAD_FOLDER, filename)
+    filename = secure_filename(file.filename)
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(input_path)
 
-
     cap = cv2.VideoCapture(input_path)
-    
-
     fps = cap.get(cv2.CAP_PROP_FPS) or 30
-    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
+    
     net = load_model()
-    # Fichier brut .avi (temporaire)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(RAW_VIDEO_PATH, fourcc, fps, (width, height))
-    
-    texts_set = set()
+
+    plates_dict = {}
+    frame_count = 0
+
+    plates_dict = {}
+    frame_count = 0
+    valid_detections = 0  # Compteur de détections valides
+
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+
+        frame_count += 1
         result_img, new_texts = yolo_predictions(frame, net)
         out.write(result_img)
 
-        # Ajout uniquement des nouvelles plaques non encore vues
-        for t in new_texts:
-            if t not in texts_set:
-                texts_set.add(t)
+        # Nouveau filtrage renforcé
+        for plate in new_texts:
+            if is_valid_plate(plate):
+                clean = plate.replace(" ", "").upper()
+                if clean not in plates_dict:
+                    valid_detections += 1
+                    print(f"✅ Frame {frame_count} - Plaque valide : {plate}")
+                plates_dict[clean] = plate  # Garde la dernière version
 
-    texts = list(texts_set)
-
+    # Vérification finale
+    if valid_detections == 0:
+        print("Aucune détection valide dans toute la vidéo")
+        valid_plates = ['Aucune plaque valide détectée']
+    else:
+        valid_plates = list(plates_dict.values())
+        print(f"\n🔥 {valid_detections} détections valides sur {frame_count} frames")
     cap.release()
     out.release()
 
-     #  Nettoyer les textes pour nom de fichier
-    cleaned_texts = [t.replace("-", "").replace(" ", "").upper() for t in texts if t and t != 'no number']
-    main_plate = cleaned_texts[0] if cleaned_texts else None
+    # Debug: Affiche toutes les plaques valides trouvées
+    print("\nPlaques valides finales:")
+    for i, (clean, orig) in enumerate(plates_dict.items(), 1):
+        print(f"{i}. Original: {orig} | Nettoyé: {clean}")
 
-    #  Nom du fichier vidéo final
-    now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
-    if main_plate:
-        video_name = f"{main_plate}_{now_str}.mp4"
+    if not plates_dict:
+        print("Aucune plaque valide trouvée dans toute la vidéo")
+        valid_plates = ['Aucune plaque valide détectée']
     else:
-        video_name = f"video_{now_str}.mp4"
+        valid_plates = list(plates_dict.values())
+
+
+    # Génération du nom de fichier
+    main_plate = clean_plate_text(valid_plates[0]) if valid_plates else None
+    now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    video_name = f"{main_plate}_{now_str}.mp4" if main_plate else f"video_{now_str}.mp4"
     video_path = os.path.join('static', 'exports', video_name)
 
-    # Convertir AVI vers vidéo finale
+    # Conversion vidéo
     os.system(f"ffmpeg -y -i {RAW_VIDEO_PATH} -vcodec libx264 -crf 23 {video_path}")
-
-    # ❌ Supprimer le fichier temporaire .avi
     if os.path.exists(RAW_VIDEO_PATH):
         os.remove(RAW_VIDEO_PATH)
 
-    for plate in texts:
-        if plate and plate != 'no number':
+    # Sauvegarde en base
+    for plate in valid_plates:
+        if plate not in ['Aucune plaque valide détectée']:
             save_plate(plate, source='video', image_path=f"exports/{video_name}")
 
-     # Nettoyer le fichier uploadé après l'avoir ouvert avec OpenCV
+    # Nettoyage
     if os.path.exists(input_path):
         os.remove(input_path)
 
-    #  Enregistrement de la vidéo finale
-    return redirect(url_for('result', media_type='video', plates=",".join(texts), video_name=video_name))
+    return redirect(url_for('result', 
+                         media_type='video',
+                         plates=",".join(valid_plates),
+                         video_name=video_name))
 
+
+def clean_plate_text(text):
+    """Nettoie le texte de la plaque pour comparaison"""
+    return text.replace(" ", "").upper()
 
 @app.route('/use_webcam', methods=['POST'])
 def use_webcam():
@@ -274,7 +308,6 @@ def result():
         time=time.time  # ⬅️ très important
     )
 
-from flask import Response
 
 
 # Variable globale pour stocker les plaques détectées en direct
